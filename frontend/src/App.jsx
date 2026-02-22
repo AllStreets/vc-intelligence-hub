@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { PageRouter, usePageContext } from './components/PageRouter'
+import { Sidebar } from './components/Sidebar'
 import TrendsFeed from './components/TrendsFeed'
 import TrendDrilldown from './components/TrendDrilldown'
 import DealDiscovery from './components/DealDiscovery'
@@ -267,7 +268,7 @@ function AppContent() {
 
   return (
     <div className="flex h-screen bg-dark-900 text-white">
-      {/* Sidebar will be added in Task 3 */}
+      <Sidebar />
       <main className="flex-1 overflow-auto">
         {activePage === 'discover' && <Discover />}
         {activePage === 'evaluate' && <Evaluate />}
