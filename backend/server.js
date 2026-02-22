@@ -51,6 +51,42 @@ app.use(cors());
 app.use(express.json());
 
 // ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+// Transform trend sources array into structured objects with URLs
+function transformTrendSources(trend) {
+  const sourceUrls = {
+    'github': 'https://github.com/trending',
+    'newsapi': 'https://newsapi.org',
+    'serper': 'https://serper.dev',
+    'hackernews': 'https://news.ycombinator.com',
+    'yc_scraper': 'https://www.ycombinator.com/startups',
+    'sec_edgar': 'https://www.sec.gov/edgar',
+    'angellist': 'https://www.angellist.com',
+    'twitter': 'https://twitter.com'
+  };
+
+  if (!trend.sources || !Array.isArray(trend.sources) || trend.sources.length === 0) {
+    return null;
+  }
+
+  return trend.sources.map(source => ({
+    name: source.charAt(0).toUpperCase() + source.slice(1).replace('_', ' '),
+    url: sourceUrls[source] || 'https://example.com',
+    mention_count: trend.mention_count || 0
+  }));
+}
+
+// Transform trends to include structured source objects
+function enrichTrendsWithSources(trends) {
+  return trends.map(trend => ({
+    ...trend,
+    sources: transformTrendSources(trend)
+  }));
+}
+
+// ============================================
 // HEALTH & STATUS ENDPOINTS
 // ============================================
 
@@ -91,10 +127,11 @@ app.get('/api/trends/scored', async (req, res) => {
     const { trends } = await pluginService.collectTrends();
     const deduplicated = trendScoringService.deduplicateTrends(trends);
     const scored = trendScoringService.scoreTrends(deduplicated);
+    const enriched = enrichTrendsWithSources(scored);
 
     res.json({
-      trends: scored,
-      count: scored.length,
+      trends: enriched,
+      count: enriched.length,
       timestamp: new Date().toISOString()
     });
   } catch (error) {

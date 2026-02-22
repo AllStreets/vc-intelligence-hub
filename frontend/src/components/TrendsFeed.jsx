@@ -1,6 +1,7 @@
 import { MomentumIndicator } from './MomentumIndicator';
 import { SearchFilter } from './SearchFilter';
 import { FounderDetailsPanel } from './FounderDetailsPanel';
+import { SourceLinks } from './SourceLinks';
 import { useState, useEffect } from 'react';
 
 const trendColors = {
@@ -37,8 +38,9 @@ export default function TrendsFeed({ trends, selectedTrend, onSelectTrend }) {
       } else {
         const response = await fetch('/api/trends/scored');
         const data = await response.json();
-        setAllTrends(data);
-        setFilteredTrends(data);
+        const trendsList = data.trends || data;
+        setAllTrends(trendsList);
+        setFilteredTrends(trendsList);
       }
     } catch (error) {
       console.error('Error fetching trends:', error);
@@ -126,12 +128,6 @@ export default function TrendsFeed({ trends, selectedTrend, onSelectTrend }) {
                 }`}>
                   {trend.lifecycle}
                 </span>
-
-                {trend.sources && trend.sources.map((source) => (
-                  <span key={source} className="text-xs bg-gray-700 px-2 py-1 rounded text-gray-300">
-                    {source}
-                  </span>
-                ))}
               </div>
 
               {trend.confidence && (
@@ -155,6 +151,8 @@ export default function TrendsFeed({ trends, selectedTrend, onSelectTrend }) {
                   ))}
                 </div>
               </div>
+
+              <SourceLinks sources={trend.sources} />
 
               <div className="flex justify-between items-center mt-3">
                 <span className="text-sm text-slate-400">Score: {trend.score}/100</span>
