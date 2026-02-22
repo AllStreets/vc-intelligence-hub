@@ -1,5 +1,6 @@
 import { MomentumIndicator } from './MomentumIndicator';
 import { SearchFilter } from './SearchFilter';
+import { FounderDetailsPanel } from './FounderDetailsPanel';
 import { useState, useEffect } from 'react';
 
 const trendColors = {
@@ -21,6 +22,7 @@ export default function TrendsFeed({ trends, selectedTrend, onSelectTrend }) {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategories, setSelectedCategories] = useState([]);
+  const [selectedFounderId, setSelectedFounderId] = useState(null);
 
   useEffect(() => {
     fetchTrends();
@@ -138,6 +140,22 @@ export default function TrendsFeed({ trends, selectedTrend, onSelectTrend }) {
                 </div>
               )}
 
+              {/* Founders section */}
+              <div className="mt-3">
+                <p className="text-xs text-slate-400 mb-1">Founders:</p>
+                <div className="flex flex-wrap gap-1">
+                  {trend.founders?.map(founder => (
+                    <button
+                      key={founder.id}
+                      onClick={() => setSelectedFounderId(founder.id)}
+                      className="text-sm text-blue-400 hover:text-blue-300 hover:underline"
+                    >
+                      @{founder.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="flex justify-between items-center mt-3">
                 <span className="text-sm text-slate-400">Score: {trend.score}/100</span>
                 <MomentumIndicator momentum={trend.momentum} change={trend.momentumChange} />
@@ -152,6 +170,11 @@ export default function TrendsFeed({ trends, selectedTrend, onSelectTrend }) {
           )}
         </div>
       )}
+
+      <FounderDetailsPanel
+        founderId={selectedFounderId}
+        onClose={() => setSelectedFounderId(null)}
+      />
     </div>
   );
 }

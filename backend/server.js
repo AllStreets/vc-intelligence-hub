@@ -203,6 +203,27 @@ app.delete('/api/watchlist/:trendId', async (req, res) => {
 });
 
 // ============================================
+// FOUNDERS ENDPOINTS
+// ============================================
+
+app.get('/api/founders/:founderId', async (req, res) => {
+  try {
+    const { founderId } = req.params;
+    // Fetch from plugins or cache
+    const founders = await pluginManager.fetchFounders();
+    const founder = founders.find(f => f.id === founderId);
+
+    if (!founder) {
+      return res.status(404).json({ error: 'Founder not found' });
+    }
+
+    res.json(founder);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
 // USER PREFERENCES ENDPOINTS
 // ============================================
 
