@@ -22,6 +22,7 @@ import { logger } from './utils/logger.js';
 import * as snapshotService from './services/snapshotService.js';
 import * as watchlistService from './services/watchlistService.js';
 import * as userPreferencesService from './services/userPreferencesService.js';
+import { getFoundersForTrend, getUniqueFounders, buildFounderNetwork } from './services/founderService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -126,63 +127,11 @@ function transformTrendsForFrontend(trends) {
 }
 
 // Generate mock founder data for demo (in production, this would come from founder data sources)
-function generateMockFounders(trend) {
-  const firstNames = ['Sarah', 'Alex', 'Jordan', 'Casey', 'Morgan', 'Riley', 'Taylor', 'Avery', 'Quinn', 'Blake', 'Jordan', 'Casey', 'Morgan', 'Devon', 'Skyler', 'Reese', 'Cameron', 'Dakota'];
-  const lastNames = ['Chen', 'Rodriguez', 'Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Miller', 'Davis', 'Wilson', 'Garcia', 'Martinez', 'Lee', 'Wang', 'Kim', 'Patel'];
-  const titles = ['CEO', 'CTO', 'Co-Founder', 'Engineering Lead', 'Product Lead', 'Founder', 'Chief Product Officer', 'VP Engineering'];
-  const companies = ['Google', 'Facebook', 'Amazon', 'Microsoft', 'Apple', 'Tesla', 'Stripe', 'Airbnb', 'Uber', 'Slack', 'Notion', 'Figma'];
-
-  // Create deterministic but varied seed (convert id to string if it's a number)
-  const idString = String(trend.id);
-  const seed = idString.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
-
-  // Generate founders for 40% of trends
-  if ((seed % 10) < 6) return [];
-
-  const founderCount = ((seed % 3) + 1); // 1-3 founders
-  const founders = [];
-
-  for (let i = 0; i < founderCount && i < 2; i++) {
-    const nameIdx = (seed + i * 131) % firstNames.length;
-    const lastIdx = (seed + i * 257) % lastNames.length;
-    const titleIdx = (seed + i * 383) % titles.length;
-    const company1Idx = (seed + i * 449) % companies.length;
-    const company2Idx = (seed + i * 563) % companies.length;
-    const exits = ((seed + i * 719) % 8) + 1;
-    const roi = ((seed + i * 883) % 400) + 50;
-
-    const firstName = firstNames[nameIdx];
-    const lastName = lastNames[lastIdx];
-    const lowerFirst = firstName.toLowerCase();
-    const lowerLast = lastName.toLowerCase();
-
-    founders.push({
-      id: `founder-${trend.id}-${i}`,
-      name: `${firstName} ${lastName}`,
-      title: titles[titleIdx],
-      email: `${lowerFirst}.${lowerLast}@founders.io`,
-      social: {
-        twitter: `@${lowerFirst}${lowerLast}`,
-        linkedin: `linkedin.com/in/${lowerFirst}-${lowerLast}`,
-        angellist: `angel.co/u/${lowerFirst}-${lowerLast}`
-      },
-      sectors: [trend.category],
-      pastCompanies: [
-        companies[company1Idx],
-        company2Idx !== company1Idx ? companies[company2Idx] : companies[(company2Idx + 1) % companies.length]
-      ],
-      investmentTrack: { exits: exits, averageROI: roi }
-    });
-  }
-
-  return founders;
-}
-
-// Enrich trends with founder data
+// Enrich trends with founder data using founder service
 function enrichTrendsWithFounders(trends) {
   return trends.map(trend => ({
     ...trend,
-    founders: generateMockFounders(trend)
+    founders: getFoundersForTrend(trend)
   }));
 }
 
@@ -310,6 +259,35 @@ app.get('/api/founders', async (req, res) => {
     res.json(result);
   } catch (error) {
     logger.error('Error in /api/founders', { error: error.message });
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/founder-network', async (req, res) => {
+  try {
+    logger.info('GET /api/founder-network - Getting founder network graph data');
+    const { trends } = await pluginService.collectTrends();
+    const deduplicated = trendScoringService.deduplicateTrends(trends);
+    const scored = trendScoringService.scoreTrends(deduplicated);
+    const enriched = enrichTrendsWithSources(scored);
+    const withFounders = enrichTrendsWithFounders(enriched);
+
+    // Collect all unique founders
+    const allFounders = withFounders.flatMap(t => t.founders || []);
+    const uniqueFounders = getUniqueFounders(allFounders);
+
+    // Build network graph structure
+    const { nodes, edges } = buildFounderNetwork(uniqueFounders);
+
+    res.json({
+      nodes,
+      edges,
+      founderCount: uniqueFounders.length,
+      connectionCount: edges.length,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    logger.error('Error in /api/founder-network', { error: error.message });
     res.status(500).json({ error: error.message });
   }
 });
