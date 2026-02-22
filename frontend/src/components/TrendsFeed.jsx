@@ -49,6 +49,15 @@ export default function TrendsFeed({ trends, selectedTrend, onSelectTrend }) {
     fetchTrends();
   }, []);
 
+  // Sync trends prop with internal state whenever it changes
+  useEffect(() => {
+    if (trends && trends.length > 0) {
+      setAllTrends(trends);
+      setFilteredTrends(trends);
+      setLoading(false);
+    }
+  }, [trends]);
+
   const fetchTrends = async () => {
     try {
       // Use the trends passed as prop if available, otherwise try API
