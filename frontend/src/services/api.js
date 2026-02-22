@@ -13,11 +13,11 @@ const api = axios.create({
 
 export const fetchAPIStatus = async () => {
   try {
-    const response = await api.get('/health')
+    const response = await api.get('/api-status')
     return response.data
   } catch (error) {
     console.error('Error fetching API status:', error)
-    return { status: 'error' }
+    return { apis: {}, activePlugins: [] }
   }
 }
 
