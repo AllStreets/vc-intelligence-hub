@@ -7,7 +7,8 @@ export function Settings() {
     defaultMomentumThreshold: 50
   });
   const [systemInfo, setSystemInfo] = useState({});
-  const [searchHistory, setSearchHistory] = useState([]);
+  const [trendSearchHistory, setTrendSearchHistory] = useState([]);
+  const [dealSearchHistory, setDealSearchHistory] = useState([]);
   const [thesisPresets, setThesisPresets] = useState([]);
   const [showThesisDropdown, setShowThesisDropdown] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -19,14 +20,24 @@ export function Settings() {
 
   const fetchSettings = async () => {
     try {
-      // Load search history from localStorage
+      // Load trend search history from localStorage
       try {
         const saved = localStorage.getItem('vc-search-history');
         if (saved) {
-          setSearchHistory(JSON.parse(saved));
+          setTrendSearchHistory(JSON.parse(saved));
         }
       } catch (err) {
-        setSearchHistory([]);
+        setTrendSearchHistory([]);
+      }
+
+      // Load deal search history from localStorage
+      try {
+        const saved = localStorage.getItem('vc-deals-search-history');
+        if (saved) {
+          setDealSearchHistory(JSON.parse(saved));
+        }
+      } catch (err) {
+        setDealSearchHistory([]);
       }
 
       // Load investment thesis presets from localStorage
@@ -143,14 +154,14 @@ export function Settings() {
           </div>
         </section>
 
-        {/* Search History */}
+        {/* Trends Search History */}
         <section className="bg-dark-700 rounded-lg border border-dark-600 p-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-bold text-white">Search History</h2>
-            {searchHistory.length > 0 && (
+            <h2 className="text-lg font-bold text-white">Trends Search History</h2>
+            {trendSearchHistory.length > 0 && (
               <button
                 onClick={() => {
-                  setSearchHistory([]);
+                  setTrendSearchHistory([]);
                   localStorage.removeItem('vc-search-history');
                 }}
                 className="text-xs text-red-400 hover:text-red-300 transition-colors"
@@ -160,11 +171,44 @@ export function Settings() {
             )}
           </div>
 
-          {searchHistory.length === 0 ? (
-            <p className="text-slate-400 text-sm">No search history yet</p>
+          {trendSearchHistory.length === 0 ? (
+            <p className="text-slate-400 text-sm">No trend searches yet</p>
           ) : (
             <div className="space-y-2 max-h-48 overflow-y-auto">
-              {searchHistory.map((search) => (
+              {trendSearchHistory.map((search) => (
+                <div key={search.id} className="flex justify-between items-start p-3 bg-dark-600 rounded text-sm">
+                  <div>
+                    <p className="text-slate-300 font-medium">"{search.query}"</p>
+                  </div>
+                  <p className="text-xs text-slate-500">{search.displayTime}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Deals Search History */}
+        <section className="bg-dark-700 rounded-lg border border-dark-600 p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-bold text-white">Deals Search History</h2>
+            {dealSearchHistory.length > 0 && (
+              <button
+                onClick={() => {
+                  setDealSearchHistory([]);
+                  localStorage.removeItem('vc-deals-search-history');
+                }}
+                className="text-xs text-red-400 hover:text-red-300 transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          {dealSearchHistory.length === 0 ? (
+            <p className="text-slate-400 text-sm">No deal searches yet</p>
+          ) : (
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {dealSearchHistory.map((search) => (
                 <div key={search.id} className="flex justify-between items-start p-3 bg-dark-600 rounded text-sm">
                   <div>
                     <p className="text-slate-300 font-medium">"{search.query}"</p>

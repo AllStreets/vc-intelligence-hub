@@ -16,6 +16,7 @@ export function Discover() {
   const [error, setError] = useState(null)
   const [activeTab, setActiveTab] = useState('trends')
   const [searchHistory, setSearchHistory] = useState([])
+  const [dealSearchHistory, setDealSearchHistory] = useState([])
   const [showHistory, setShowHistory] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
 
@@ -42,6 +43,10 @@ export function Discover() {
       const saved = localStorage.getItem('vc-search-history')
       if (saved) {
         setSearchHistory(JSON.parse(saved))
+      }
+      const dealsSaved = localStorage.getItem('vc-deals-search-history')
+      if (dealsSaved) {
+        setDealSearchHistory(JSON.parse(dealsSaved))
       }
     } catch (err) {
       console.error('Error loading search history:', err)
@@ -78,6 +83,30 @@ export function Discover() {
   const handleSearchSubmit = (query) => {
     if (query.trim()) {
       addToSearchHistory(query)
+    }
+  }
+
+  const addToDealSearchHistory = (query) => {
+    const newEntry = {
+      id: Date.now(),
+      query,
+      timestamp: new Date().toISOString(),
+      displayTime: new Date().toLocaleTimeString()
+    }
+
+    const updated = [newEntry, ...dealSearchHistory].slice(0, 20)
+    setDealSearchHistory(updated)
+
+    try {
+      localStorage.setItem('vc-deals-search-history', JSON.stringify(updated))
+    } catch (err) {
+      console.error('Error saving deal search history:', err)
+    }
+  }
+
+  const handleDealSearchSubmit = (query) => {
+    if (query.trim()) {
+      addToDealSearchHistory(query)
     }
   }
 
@@ -134,22 +163,25 @@ export function Discover() {
     <div>
       <header className="border-b border-slate-700 border-t-4 border-t-slate-500 bg-dark-800 sticky top-0 z-40">
         <div className="px-6 py-6">
-          {!isScrolled && (
-            <div className="flex items-center justify-between gap-6 mb-6">
-              <div>
-                <h1 className="text-4xl font-display font-bold mb-2 text-slate-300">
-                  DISCOVER
-                </h1>
-                <p className="text-slate-400 font-light">Real-time trend analysis for venture capital</p>
+          {!isScrolled ? (
+            <>
+              <div className="flex items-center justify-between gap-6 mb-6">
+                <div>
+                  <h1 className="text-4xl font-display font-bold mb-2 text-slate-300">
+                    DISCOVER
+                  </h1>
+                  <p className="text-slate-400 font-light">Real-time trend analysis for venture capital</p>
+                </div>
+                <div className="text-right text-sm text-gray-400">
+                  <p>Market Intelligence Platform</p>
+                  <p className="text-xs mt-1">{new Date().toLocaleDateString()}</p>
+                </div>
               </div>
-              <div className="text-right text-sm text-gray-400">
-                <p>Market Intelligence Platform</p>
-                <p className="text-xs mt-1">{new Date().toLocaleDateString()}</p>
-              </div>
-            </div>
+              <APIStatusBar status={apiStatus} isCollapsed={false} />
+            </>
+          ) : (
+            <h1 className="text-3xl font-display font-bold text-slate-300">DISCOVER</h1>
           )}
-
-          <APIStatusBar status={apiStatus} isCollapsed={isScrolled} />
         </div>
       </header>
 
@@ -307,7 +339,7 @@ export function Discover() {
             {activeTab === 'trends' ? (
               <TrendsFeed trends={trends} selectedTrend={selectedTrend} onSelectTrend={setSelectedTrend} onSearchSubmit={handleSearchSubmit} />
             ) : (
-              <DealDiscovery deals={deals} />
+              <DealDiscovery deals={deals} onSearchSubmit={handleDealSearchSubmit} />
             )}
           </div>
 

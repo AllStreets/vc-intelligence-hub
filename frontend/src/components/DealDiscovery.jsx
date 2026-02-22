@@ -3,7 +3,7 @@ import { TrashIcon } from '@heroicons/react/24/outline';
 
 const dealTypeCategories = ['Funding', 'Investment', 'Funding Round', 'Seed/Series A', 'Series B', 'Series C', 'IPO', 'Acquisition'];
 
-export default function DealDiscovery({ deals }) {
+export default function DealDiscovery({ deals, onSearchSubmit }) {
   const [filteredDeals, setFilteredDeals] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDealTypes, setSelectedDealTypes] = useState([]);
@@ -76,6 +76,11 @@ export default function DealDiscovery({ deals }) {
             placeholder="Search deals by company or title..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter' && searchQuery.trim() && onSearchSubmit) {
+                onSearchSubmit(searchQuery);
+              }
+            }}
             className="w-full px-4 py-3 bg-slate-700 text-white rounded-lg border border-slate-600 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
           />
           <svg className="absolute right-3 top-3 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

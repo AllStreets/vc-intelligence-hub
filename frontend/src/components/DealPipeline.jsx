@@ -1,7 +1,7 @@
 import { useState, useEffect, memo } from 'react';
 import { DndContext } from '@dnd-kit/core';
 import { DroppableArea } from './DroppableArea';
-import { XMarkIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { fetchDealsWithCache, getApiBaseUrl } from '../services/dataCache';
 
 const pipelineStages = [
@@ -27,6 +27,26 @@ const DealPipeline = memo(function DealPipeline() {
     fetchDeals();
   }, []);
 
+  const savePipelineToStorage = (updatedPipeline) => {
+    try {
+      localStorage.setItem('vc-custom-deals', JSON.stringify(updatedPipeline));
+    } catch (error) {
+      console.error('Error saving pipeline:', error);
+    }
+  };
+
+  const loadCustomDeals = () => {
+    try {
+      const saved = localStorage.getItem('vc-custom-deals');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (error) {
+      console.error('Error loading custom deals:', error);
+    }
+    return null;
+  };
+
   const fetchDeals = async () => {
     try {
       const dealsData = await fetchDealsWithCache();
@@ -47,6 +67,14 @@ const DealPipeline = memo(function DealPipeline() {
         }
       });
 
+      // Load custom deals from localStorage
+      const customDeals = loadCustomDeals();
+      if (customDeals) {
+        Object.keys(customDeals).forEach(stageId => {
+          staged[stageId] = [...(staged[stageId] || []), ...customDeals[stageId]];
+        });
+      }
+
       setDeals(data);
       setPipeline(staged);
     } catch (error) {
@@ -66,13 +94,19 @@ const DealPipeline = memo(function DealPipeline() {
 
     // Update local state
     const updatedPipeline = { ...pipeline };
+    let movedDeal = null;
     Object.keys(updatedPipeline).forEach(stage => {
-      updatedPipeline[stage] = updatedPipeline[stage].filter(d => d.id !== dealId);
+      const filtered = updatedPipeline[stage].filter(d => d.id !== dealId);
+      if (filtered.length < updatedPipeline[stage].length) {
+        movedDeal = updatedPipeline[stage].find(d => d.id === dealId);
+      }
+      updatedPipeline[stage] = filtered;
     });
-    updatedPipeline[newStage]?.push(
-      deals.find(d => d.id === dealId)
-    );
+    if (movedDeal) {
+      updatedPipeline[newStage]?.push(movedDeal);
+    }
     setPipeline(updatedPipeline);
+    savePipelineToStorage(updatedPipeline);
 
     // Update backend
     try {
@@ -108,6 +142,7 @@ const DealPipeline = memo(function DealPipeline() {
       }
       updatedPipeline[formData.status].push(newDeal);
       setPipeline(updatedPipeline);
+      savePipelineToStorage(updatedPipeline);
 
       // Try to sync with backend if available
       try {
@@ -177,12 +212,29 @@ const DealPipeline = memo(function DealPipeline() {
                     <div
                       key={deal.id}
                       draggable
-                      className="bg-dark-600 rounded p-3 cursor-move hover:bg-dark-500 transition-colors border border-dark-500"
+                      className="bg-dark-600 rounded p-3 cursor-move hover:bg-dark-500 transition-colors border border-dark-500 flex justify-between items-start group"
                     >
-                      <p className="font-semibold text-white text-sm">{deal.company_name}</p>
-                      <p className="text-xs text-slate-400 mt-1">{deal.funding_type}</p>
-                      {deal.founders?.length > 0 && (
-                        <p className="text-xs text-amber-400 mt-1">👤 {deal.founders[0].name}</p>
+                      <div className="flex-1">
+                        <p className="font-semibold text-white text-sm">{deal.company_name}</p>
+                        <p className="text-xs text-slate-400 mt-1">{deal.funding_type}</p>
+                        {deal.founders?.length > 0 && (
+                          <p className="text-xs text-amber-400 mt-1">👤 {deal.founders[0].name}</p>
+                        )}
+                      </div>
+                      {deal.id.toString().length === 13 && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const updatedPipeline = { ...pipeline };
+                            updatedPipeline[stage.id] = updatedPipeline[stage.id].filter(d => d.id !== deal.id);
+                            setPipeline(updatedPipeline);
+                            savePipelineToStorage(updatedPipeline);
+                          }}
+                          className="ml-2 p-1 text-slate-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="Delete deal"
+                        >
+                          <TrashIcon className="w-4 h-4" />
+                        </button>
                       )}
                     </div>
                   ))}
