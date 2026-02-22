@@ -68,10 +68,13 @@ export default function TrendDrilldown({ trend }) {
         <div className="card">
           <h4 className="card-header">Data Sources</h4>
           <div className="space-y-2">
-            {trend.sources.map((source) => (
-              <div key={source} className="flex items-center gap-2 p-2 bg-dark-900 rounded">
+            {trend.sources.map((source, idx) => (
+              <div key={`${source.name}-${idx}`} className="flex items-center gap-2 p-2 bg-dark-900 rounded">
                 <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                <span className="text-sm font-medium capitalize text-gray-300">{source}</span>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-300">{source.name}</p>
+                  <p className="text-xs text-gray-500">{source.mention_count} mentions</p>
+                </div>
               </div>
             ))}
           </div>
