@@ -60,7 +60,6 @@ export default function APIStatusBar({ status }) {
               style={{ backgroundColor: getIndicatorColor(config) }}
             ></span>
             {name.replace('_', ' ')}
-            {config.itemCount > 0 && <span className="ml-1 text-xs opacity-75">({config.itemCount})</span>}
           </div>
         ))}
       </div>
