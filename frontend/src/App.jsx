@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
+import { PageRouter, usePageContext } from './components/PageRouter'
 import TrendsFeed from './components/TrendsFeed'
 import TrendDrilldown from './components/TrendDrilldown'
 import DealDiscovery from './components/DealDiscovery'
 import APIStatusBar from './components/APIStatusBar'
 import { fetchTrends, fetchDeals, fetchAPIStatus } from './services/api'
 
-export default function App() {
+// Placeholder page components - will be replaced in Task 4
+function Discover() {
   const [trends, setTrends] = useState([])
   const [deals, setDeals] = useState([])
   const [apiStatus, setApiStatus] = useState({})
@@ -14,7 +16,6 @@ export default function App() {
   const [error, setError] = useState(null)
   const [activeTab, setActiveTab] = useState('trends')
 
-  // Fetch API status on mount
   useEffect(() => {
     loadAPIStatus()
   }, [])
@@ -60,10 +61,9 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-dark-900 text-white overflow-x-hidden">
-      {/* Header */}
+    <div>
       <header className="border-b border-gray-700 bg-dark-800 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-6 py-6">
+        <div className="px-6 py-6">
           <div className="flex items-center justify-between gap-6 mb-6">
             <div>
               <h1 className="text-4xl font-display font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
@@ -77,14 +77,11 @@ export default function App() {
             </div>
           </div>
 
-          {/* API Status Bar */}
           <APIStatusBar status={apiStatus} />
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto p-6">
-        {/* Control Panel */}
+      <main className="p-6">
         <div className="mb-8 flex flex-wrap gap-4 items-center">
           <button
             onClick={handleLoadTrends}
@@ -157,7 +154,6 @@ export default function App() {
           </button>
         </div>
 
-        {/* Error Message */}
         {error && (
           <div className="mb-6 p-4 rounded-lg bg-red-900/20 border border-red-700/50 text-red-200">
             <p className="font-semibold mb-1">Error</p>
@@ -165,7 +161,6 @@ export default function App() {
           </div>
         )}
 
-        {/* Tab Navigation */}
         <div className="mb-6 border-b border-gray-700 flex gap-4">
           <button
             onClick={() => setActiveTab('trends')}
@@ -189,9 +184,7 @@ export default function App() {
           </button>
         </div>
 
-        {/* Content Area */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Trends Feed or Deals */}
           <div className="lg:col-span-2">
             {activeTab === 'trends' ? (
               <TrendsFeed trends={trends} selectedTrend={selectedTrend} onSelectTrend={setSelectedTrend} />
@@ -200,7 +193,6 @@ export default function App() {
             )}
           </div>
 
-          {/* Right Sidebar - Trend Details */}
           {activeTab === 'trends' && selectedTrend && (
             <div className="lg:col-span-1">
               <TrendDrilldown trend={selectedTrend} />
@@ -208,7 +200,6 @@ export default function App() {
           )}
         </div>
 
-        {/* Empty State */}
         {trends.length === 0 && deals.length === 0 && !loading && activeTab === 'trends' && (
           <div className="text-center py-16 text-gray-400">
             <p className="text-lg mb-4">No trends loaded yet</p>
@@ -223,13 +214,67 @@ export default function App() {
           </div>
         )}
       </main>
+    </div>
+  )
+}
 
-      {/* Footer */}
-      <footer className="border-t border-gray-700 bg-dark-800 mt-12 py-6">
-        <div className="max-w-7xl mx-auto px-6 text-center text-sm text-gray-500">
-          <p>VC Intelligence Hub © 2026 | Powered by plugin-based data aggregation</p>
-        </div>
-      </footer>
+function Evaluate() {
+  return (
+    <div className="p-6">
+      <h1 className="text-4xl font-bold mb-4">Evaluate</h1>
+      <p className="text-gray-400">Founder network visualization and investment thesis evaluation</p>
+    </div>
+  )
+}
+
+function Decide() {
+  return (
+    <div className="p-6">
+      <h1 className="text-4xl font-bold mb-4">Decide</h1>
+      <p className="text-gray-400">Watchlist, investment thesis matcher, and deal pipeline management</p>
+    </div>
+  )
+}
+
+function Track() {
+  return (
+    <div className="p-6">
+      <h1 className="text-4xl font-bold mb-4">Track</h1>
+      <p className="text-gray-400">Historical trend charts and performance analytics</p>
+    </div>
+  )
+}
+
+function Settings() {
+  return (
+    <div className="p-6">
+      <h1 className="text-4xl font-bold mb-4">Settings</h1>
+      <p className="text-gray-400">Platform configuration and preferences</p>
+    </div>
+  )
+}
+
+export default function App() {
+  return (
+    <PageRouter>
+      <AppContent />
+    </PageRouter>
+  )
+}
+
+function AppContent() {
+  const { activePage } = usePageContext()
+
+  return (
+    <div className="flex h-screen bg-dark-900 text-white">
+      {/* Sidebar will be added in Task 3 */}
+      <main className="flex-1 overflow-auto">
+        {activePage === 'discover' && <Discover />}
+        {activePage === 'evaluate' && <Evaluate />}
+        {activePage === 'decide' && <Decide />}
+        {activePage === 'track' && <Track />}
+        {activePage === 'settings' && <Settings />}
+      </main>
     </div>
   )
 }
