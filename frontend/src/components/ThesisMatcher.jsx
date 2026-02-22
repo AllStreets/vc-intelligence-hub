@@ -50,6 +50,8 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
   const [thesisText, setThesisText] = useState('');
   const [isSaved, setIsSaved] = useState(true);
   const [results, setResults] = useState([]);
+  const [manuallySetSectors, setManuallySetSectors] = useState(false);
+  const [manuallySetStages, setManuallySetStages] = useState(false);
 
   // Load saved thesis from localStorage on mount
   useEffect(() => {
@@ -76,6 +78,20 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
       }
     }
   }, []);
+
+  // Auto-toggle sectors/stages based on parsed thesis
+  useEffect(() => {
+    if (thesisText.trim() && !manuallySetSectors && !manuallySetStages) {
+      const parsed = parseThesis(thesisText);
+      if (parsed.sectors.length > 0 || parsed.stages.length > 0) {
+        setThesis(prev => ({
+          ...prev,
+          sectors: parsed.sectors.length > 0 ? parsed.sectors : prev.sectors,
+          stages: parsed.stages.length > 0 ? parsed.stages : prev.stages
+        }));
+      }
+    }
+  }, [thesisText, manuallySetSectors, manuallySetStages]);
 
   // Auto-save thesis text to localStorage with debouncing
   useEffect(() => {
@@ -121,30 +137,22 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
       ? parseThesis(thesisText)
       : { sectors: [], stages: [], keywords: [], confidence: 0 };
 
-    // Merge UI selections with parsed thesis
-    const activeSectors = thesis.sectors.length > 0
-      ? thesis.sectors
-      : parsedThesis.sectors;
-    const activeStages = thesis.stages.length > 0
-      ? thesis.stages
-      : parsedThesis.stages;
-
     // HARD FILTER: Sectors (applies to BOTH)
-    if (activeSectors.length > 0) {
+    if (thesis.sectors.length > 0) {
       const itemSector = getOpportunitySector(item);
-      if (!activeSectors.includes(itemSector)) {
+      if (!thesis.sectors.includes(itemSector)) {
         return { percentage: 0, reasons: [], oppType };
       }
       reasons.push(`✓ ${itemSector}`);
     }
 
     // HARD FILTER: Stages (ONLY for deals)
-    if (activeStages.length > 0) {
+    if (thesis.stages.length > 0) {
       if (oppType === OpportunityType.DEAL) {
         if (!hasStageInfo(item)) {
           return { percentage: 0, reasons: [], oppType };
         }
-        const stageMatch = activeStages.some(stage =>
+        const stageMatch = thesis.stages.some(stage =>
           item.funding_type?.includes(stage)
         );
         if (!stageMatch) {
@@ -193,9 +201,8 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
       }
     }
 
-    // SOFT SCORING: Keyword matching
+    // SOFT SCORING: Keyword matching (optional - doesn't penalize if no match)
     if (parsedThesis.keywords.length > 0) {
-      totalCriteria++;
       const itemText = (getOpportunityName(item) + ' ' +
                        (item.data?.description || '') + ' ' +
                        (item.data?.title || '')).toLowerCase();
@@ -205,13 +212,14 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
       );
 
       if (keywordMatches.length > 0) {
+        totalCriteria++;
         matches++;
         reasons.push(`✓ Keywords: ${keywordMatches.slice(0, 2).join(', ')}`);
       }
     }
 
     // Handle no-criteria case
-    if (activeSectors.length === 0 && activeStages.length === 0 &&
+    if (thesis.sectors.length === 0 && thesis.stages.length === 0 &&
         thesis.minMomentum === 0 && thesis.minExits === 0 && thesis.minROI === 0) {
       return { percentage: 80, reasons: ['No filters applied'], oppType };
     }
@@ -236,6 +244,7 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
   }, [thesis, trends, deals]);
 
   const toggleSector = (sector) => {
+    setManuallySetSectors(true);
     setThesis(prev => ({
       ...prev,
       sectors: prev.sectors.includes(sector)
@@ -245,6 +254,7 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
   };
 
   const toggleStage = (stage) => {
+    setManuallySetStages(true);
     setThesis(prev => ({
       ...prev,
       stages: prev.stages.includes(stage)
@@ -317,7 +327,21 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
 
         {/* Sectors */}
         <div className="mb-6">
-          <label className="block text-sm font-semibold text-slate-300 mb-3">Target Sectors</label>
+          <div className="flex justify-between items-center mb-3">
+            <label className="block text-sm font-semibold text-slate-300">Target Sectors</label>
+            {(thesis.sectors.length > 0 || thesis.stages.length > 0) && (
+              <button
+                onClick={() => {
+                  setThesis(prev => ({ ...prev, sectors: [], stages: [] }));
+                  setManuallySetSectors(false);
+                  setManuallySetStages(false);
+                }}
+                className="text-xs text-amber-400 hover:text-amber-300 transition-colors"
+              >
+                Reset Filters
+              </button>
+            )}
+          </div>
           <div className="border border-dark-500 rounded-lg p-4">
             <div className="grid grid-cols-2 gap-2">
               {allSectors.map(sector => (
