@@ -4,6 +4,25 @@ import { FounderDetailsPanel } from './FounderDetailsPanel';
 import { SourceLinks } from './SourceLinks';
 import { useState, useEffect } from 'react';
 
+// Map frontend category display names to backend category values
+const categoryMapping = {
+  'AI/ML': 'ai-ml',
+  'Fintech': 'fintech',
+  'Climate': 'climate',
+  'Healthcare': 'healthcare',
+  'Cybersecurity': 'cybersecurity',
+  'Web3': 'web3-crypto',
+  'SaaS': 'saas',
+  'EdTech': 'edtech',
+  'Biotech': 'biotech',
+  'Enterprise': 'enterprise'
+};
+
+// Reverse mapping for display
+const backendToFrontendCategory = Object.fromEntries(
+  Object.entries(categoryMapping).map(([display, backend]) => [backend, display])
+);
+
 const trendColors = {
   'ai-ml': 'from-indigo-600 to-indigo-700',
   'fintech': 'from-pink-600 to-pink-700',
@@ -12,8 +31,9 @@ const trendColors = {
   'cybersecurity': 'from-purple-600 to-purple-700',
   'web3-crypto': 'from-orange-600 to-orange-700',
   'saas': 'from-cyan-600 to-cyan-700',
-  'robotics': 'from-teal-600 to-teal-700',
-  'creator': 'from-magenta-600 to-magenta-700',
+  'edtech': 'from-teal-600 to-teal-700',
+  'biotech': 'from-magenta-600 to-magenta-700',
+  'enterprise': 'from-slate-600 to-slate-700',
   'other': 'from-amber-600 to-amber-700',
 }
 
@@ -71,8 +91,10 @@ export default function TrendsFeed({ trends, selectedTrend, onSelectTrend }) {
 
     // Apply category filter
     if (categories.length > 0) {
+      // Convert frontend category names to backend values
+      const backendCategories = categories.map(cat => categoryMapping[cat]);
       filtered = filtered.filter(trend =>
-        categories.includes(trend.category)
+        backendCategories.includes(trend.category)
       );
     }
 
