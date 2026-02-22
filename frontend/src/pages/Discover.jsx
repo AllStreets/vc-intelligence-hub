@@ -60,14 +60,14 @@ export function Discover() {
 
   return (
     <div>
-      <header className="border-b border-gray-700 bg-dark-800 sticky top-0 z-40">
+      <header className="border-b border-slate-700 border-t-4 border-t-slate-500 bg-dark-800 sticky top-0 z-40">
         <div className="px-6 py-6">
           <div className="flex items-center justify-between gap-6 mb-6">
             <div>
-              <h1 className="text-4xl font-display font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                VC Intelligence Hub
+              <h1 className="text-4xl font-display font-bold mb-2 text-slate-300">
+                DISCOVER
               </h1>
-              <p className="text-gray-400 font-light">Real-time trend analysis for venture capital</p>
+              <p className="text-slate-400 font-light">Real-time trend analysis for venture capital</p>
             </div>
             <div className="text-right text-sm text-gray-400">
               <p>Market Intelligence Platform</p>
@@ -159,13 +159,13 @@ export function Discover() {
           </div>
         )}
 
-        <div className="mb-6 border-b border-gray-700 flex gap-4">
+        <div className="mb-6 border-b border-dark-600 flex gap-4">
           <button
             onClick={() => setActiveTab('trends')}
             className={`px-4 py-3 font-semibold transition-colors ${
               activeTab === 'trends'
-                ? 'border-b-2 border-blue-500 text-blue-400'
-                : 'text-gray-400 hover:text-gray-300'
+                ? 'border-b-2 border-slate-400 text-slate-300'
+                : 'text-slate-400 hover:text-slate-300'
             }`}
           >
             Trends ({trends.length})
@@ -174,8 +174,8 @@ export function Discover() {
             onClick={() => setActiveTab('deals')}
             className={`px-4 py-3 font-semibold transition-colors ${
               activeTab === 'deals'
-                ? 'border-b-2 border-blue-500 text-blue-400'
-                : 'text-gray-400 hover:text-gray-300'
+                ? 'border-b-2 border-slate-400 text-slate-300'
+                : 'text-slate-400 hover:text-slate-300'
             }`}
           >
             Deals ({deals.length})
