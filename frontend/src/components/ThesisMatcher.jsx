@@ -137,13 +137,17 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
       ? parseThesis(thesisText)
       : { sectors: [], stages: [], keywords: [], confidence: 0 };
 
-    // HARD FILTER: Sectors (applies to BOTH)
+    // HARD FILTER: Sectors (applies to both if they have category info)
     if (thesis.sectors.length > 0) {
       const itemSector = getOpportunitySector(item);
-      if (!thesis.sectors.includes(itemSector)) {
-        return { percentage: 0, reasons: [], oppType };
+      // Only filter by sector if item has category (trends do, deals might not)
+      if (itemSector) {
+        if (!thesis.sectors.includes(itemSector)) {
+          return { percentage: 0, reasons: [], oppType };
+        }
+        reasons.push(`✓ ${itemSector}`);
       }
-      reasons.push(`✓ ${itemSector}`);
+      // If item has no category, don't filter it out by sector
     }
 
     // HARD FILTER: Stages (ONLY for deals)

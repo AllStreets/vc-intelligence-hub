@@ -1,9 +1,9 @@
 const STAGE_PATTERNS = {
-  'Seed': /\b(seed|pre-seed|pre seed)\b/gi,
-  'Series A': /\b(series\s*a|seriesa|ser\s*a)\b/gi,
-  'Series B': /\b(series\s*b|seriesb|ser\s*b)\b/gi,
-  'Series C': /\b(series\s*c|seriesc|ser\s*c)\b/gi,
-  'IPO': /\b(ipo|initial public offering|going public)\b/gi
+  'Seed': /\b(seed|pre-seed|pre seed)\b/i,
+  'Series A': /\b(series\s*a|seriesa|ser\s*a)\b/i,
+  'Series B': /\b(series\s*b|seriesb|ser\s*b)\b/i,
+  'Series C': /\b(series\s*c|seriesc|ser\s*c)\b/i,
+  'IPO': /\b(ipo|initial public offering|going public)\b/i
 };
 
 const SECTOR_KEYWORDS = {
