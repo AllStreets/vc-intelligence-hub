@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 
-export function TrendVelocity({ trends }) {
+const TrendVelocity = memo(function TrendVelocity({ trends }) {
   const [sortBy, setSortBy] = useState('rising');
 
   // Generate mock velocity data
@@ -68,4 +68,6 @@ export function TrendVelocity({ trends }) {
       </div>
     </div>
   );
-}
+});
+
+export { TrendVelocity };

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { DndContext } from '@dnd-kit/core';
 import { DroppableArea } from './DroppableArea';
 
@@ -9,7 +9,7 @@ const pipelineStages = [
   { id: 'ready_to_invest', label: 'Ready to Invest', color: 'green' }
 ];
 
-export function DealPipeline() {
+const DealPipeline = memo(function DealPipeline() {
   const [deals, setDeals] = useState([]);
   const [pipeline, setPipeline] = useState({});
   const [loading, setLoading] = useState(true);
@@ -114,4 +114,6 @@ export function DealPipeline() {
       </div>
     </DndContext>
   );
-}
+});
+
+export { DealPipeline };

@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, memo } from 'react';
 
-export function ThesisMatcher({ trends, deals }) {
+const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
   const [thesis, setThesis] = useState({
     sectors: [],
     stages: [],
@@ -219,4 +219,6 @@ export function ThesisMatcher({ trends, deals }) {
       </div>
     </div>
   );
-}
+});
+
+export { ThesisMatcher };

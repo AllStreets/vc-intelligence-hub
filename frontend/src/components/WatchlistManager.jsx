@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { StarIcon } from '@heroicons/react/24/solid';
 
-export function WatchlistManager() {
+const WatchlistManager = memo(function WatchlistManager() {
   const [watchlist, setWatchlist] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -104,4 +104,6 @@ export function WatchlistManager() {
       ))}
     </div>
   );
-}
+});
+
+export { WatchlistManager };

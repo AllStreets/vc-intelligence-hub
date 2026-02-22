@@ -1,10 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, memo } from 'react';
 import cytoscape from 'cytoscape';
 import fcose from 'cytoscape-fcose';
 
 cytoscape.use(fcose);
 
-export function FounderNetworkGraph({ data }) {
+const FounderNetworkGraph = memo(function FounderNetworkGraph({ data }) {
   const containerRef = useRef(null);
   const cyRef = useRef(null);
 
@@ -84,4 +84,6 @@ export function FounderNetworkGraph({ data }) {
       className="w-full h-96 bg-dark-700 rounded-lg border border-dark-600"
     />
   );
-}
+});
+
+export { FounderNetworkGraph };

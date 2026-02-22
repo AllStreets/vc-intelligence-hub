@@ -1,7 +1,7 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 
-export function TrendHistoryChart() {
+const TrendHistoryChart = memo(function TrendHistoryChart() {
   const [data, setData] = useState([]);
   const [selectedTrends, setSelectedTrends] = useState([]);
   const [allTrends, setAllTrends] = useState([]);
@@ -103,4 +103,6 @@ export function TrendHistoryChart() {
       </ResponsiveContainer>
     </div>
   );
-}
+});
+
+export { TrendHistoryChart };

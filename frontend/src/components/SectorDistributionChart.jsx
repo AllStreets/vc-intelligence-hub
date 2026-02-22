@@ -1,6 +1,7 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { memo } from 'react';
 
-export function SectorDistributionChart() {
+const SectorDistributionChart = memo(function SectorDistributionChart() {
   // Mock data: average momentum per sector over 30 days
   const data = [
     { date: 'Jan 1', 'AI/ML': 45, Fintech: 40, Climate: 35, Healthcare: 30, Web3: 25 },
@@ -41,4 +42,6 @@ export function SectorDistributionChart() {
       </AreaChart>
     </ResponsiveContainer>
   );
-}
+});
+
+export { SectorDistributionChart };
