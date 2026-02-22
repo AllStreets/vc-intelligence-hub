@@ -25,7 +25,7 @@ export function Decide() {
       const dealsData = await dealsRes.json();
 
       setTrends(trendsData.trends || []);
-      setDeals(dealsData || []);
+      setDeals(dealsData.deals || []);
     } catch (error) {
       console.error('Error fetching DECIDE page data:', error);
     } finally {
