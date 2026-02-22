@@ -26,19 +26,11 @@ export function Track() {
   };
 
   const handleExportPDF = () => {
-    exportPDF('VC-Trends-Report', 'Historical Trend Analysis Report');
+    exportPDF('VC-Trends-Report', trends);
   };
 
   const handleExportCSV = () => {
-    const data = trends.map(t => ({
-      'Trend Name': t.name,
-      'Category': t.category,
-      'Momentum Score': t.momentum_score,
-      'Score': Math.min(100, t.momentum_score * 2),
-      'Lifecycle': t.lifecycle,
-      'Confidence': t.confidence
-    }));
-    exportCSV('trends-data', data);
+    exportCSV('vc-trends-export', trends);
   };
 
   if (loading) {
