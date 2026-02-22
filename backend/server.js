@@ -16,6 +16,7 @@ import { AngelListPlugin } from './plugins/angellistPlugin.js';
 import { TwitterPlugin } from './plugins/twitterPlugin.js';
 import { logger } from './utils/logger.js';
 import * as snapshotService from './services/snapshotService.js';
+import * as watchlistService from './services/watchlistService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -151,6 +152,50 @@ app.get('/api/historical/stats/:trendName', async (req, res) => {
     const { trendName } = req.params;
     const stats = await snapshotService.getTrendStats(trendName);
     res.json(stats);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// WATCHLIST ENDPOINTS
+// ============================================
+
+app.get('/api/watchlist', async (req, res) => {
+  try {
+    const watchlist = await watchlistService.getWatchlist();
+    res.json(watchlist);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/watchlist', async (req, res) => {
+  try {
+    const { trendId, trendName, trendCategory } = req.body;
+    const result = await watchlistService.addToWatchlist(trendId, trendName, trendCategory);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/watchlist/:trendId', async (req, res) => {
+  try {
+    const { trendId } = req.params;
+    const { rating } = req.body;
+    const result = await watchlistService.updateWatchlistRating(trendId, rating);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/watchlist/:trendId', async (req, res) => {
+  try {
+    const { trendId } = req.params;
+    const result = await watchlistService.removeFromWatchlist(trendId);
+    res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
