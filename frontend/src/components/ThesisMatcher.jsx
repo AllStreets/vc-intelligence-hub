@@ -1,4 +1,4 @@
-import { useState, useMemo, memo } from 'react';
+import { useState, useMemo, memo, useEffect } from 'react';
 
 const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
   const [thesis, setThesis] = useState({
@@ -9,7 +9,35 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
     minROI: 0
   });
 
+  const [thesisText, setThesisText] = useState('');
+  const [isSaved, setIsSaved] = useState(true);
   const [results, setResults] = useState([]);
+
+  // Load saved thesis from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('vc-investment-thesis');
+    if (saved) {
+      setThesisText(saved);
+    }
+  }, []);
+
+  // Auto-save thesis text to localStorage with debouncing
+  useEffect(() => {
+    const saveTimer = setTimeout(() => {
+      if (thesisText.trim()) {
+        localStorage.setItem('vc-investment-thesis', thesisText);
+        setIsSaved(true);
+      }
+    }, 1000); // Auto-save after 1 second of inactivity
+
+    if (thesisText.trim() && isSaved) {
+      setIsSaved(true);
+    } else if (thesisText.trim()) {
+      setIsSaved(false);
+    }
+
+    return () => clearTimeout(saveTimer);
+  }, [thesisText]);
 
   const allSectors = ['AI/ML', 'Fintech', 'Climate', 'Healthcare', 'Cybersecurity', 'Web3', 'SaaS', 'EdTech', 'Biotech', 'Enterprise'];
   const allStages = ['Seed', 'Series A', 'Series B', 'Series C', 'IPO'];
@@ -116,7 +144,26 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
     <div className="space-y-6">
       {/* Preference Panel */}
       <div className="bg-dark-700 rounded-lg border border-dark-600 p-6">
-        <h3 className="text-lg font-bold text-amber-400 mb-4">Set Your Investment Thesis</h3>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-bold text-amber-400">Set Your Investment Thesis</h3>
+          {!isSaved && <span className="text-xs text-amber-300">Saving...</span>}
+          {isSaved && thesisText.trim() && <span className="text-xs text-emerald-400">✓ Saved</span>}
+        </div>
+
+        {/* Thesis Statement */}
+        <div className="mb-6">
+          <label className="block text-sm font-semibold text-slate-300 mb-3">Your Investment Thesis</label>
+          <textarea
+            value={thesisText}
+            onChange={(e) => {
+              setThesisText(e.target.value);
+              setIsSaved(false);
+            }}
+            placeholder="Describe your investment thesis, key focus areas, and long-term strategy..."
+            className="w-full px-4 py-3 bg-dark-600 border border-dark-500 rounded text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 text-sm h-24 resize-none"
+          />
+          <p className="text-xs text-slate-500 mt-2">This will be saved automatically</p>
+        </div>
 
         {/* Sectors */}
         <div className="mb-6">
