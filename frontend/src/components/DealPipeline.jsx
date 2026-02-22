@@ -1,5 +1,5 @@
 import { useState, useEffect, memo } from 'react';
-import { DndContext } from '@dnd-kit/core';
+import { DndContext, useDraggable } from '@dnd-kit/core';
 import { DroppableArea } from './DroppableArea';
 import { XMarkIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { fetchDealsWithCache, getApiBaseUrl } from '../services/dataCache';
@@ -10,6 +10,42 @@ const pipelineStages = [
   { id: 'due_diligence', label: 'Due Diligence', color: 'purple' },
   { id: 'ready_to_invest', label: 'Ready to Invest', color: 'green' }
 ];
+
+function DraggableDealCard({ deal, stageId, onDelete }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: deal.id,
+    data: { dealId: deal.id, stageId }
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      className={`bg-dark-600 rounded p-3 cursor-move hover:bg-dark-500 transition-colors border border-dark-500 flex justify-between items-start group ${
+        isDragging ? 'opacity-50 ring-2 ring-amber-400' : ''
+      }`}
+    >
+      <div className="flex-1">
+        <p className="font-semibold text-white text-sm">{deal.company_name}</p>
+        <p className="text-xs text-slate-400 mt-1">{deal.funding_type}</p>
+        {deal.founders?.length > 0 && (
+          <p className="text-xs text-amber-400 mt-1">👤 {deal.founders[0].name}</p>
+        )}
+      </div>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete(stageId, deal.id);
+        }}
+        className="ml-2 p-1 text-slate-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+        title="Delete deal"
+      >
+        <TrashIcon className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
 
 const DealPipeline = memo(function DealPipeline() {
   const [deals, setDeals] = useState([]);
@@ -91,34 +127,42 @@ const DealPipeline = memo(function DealPipeline() {
 
     const dealId = active.id;
     const newStage = over.id;
+    const oldStage = active.data?.stageId;
+
+    if (oldStage === newStage) return; // No change
 
     // Update local state
     const updatedPipeline = { ...pipeline };
-    let movedDeal = null;
-    Object.keys(updatedPipeline).forEach(stage => {
-      const filtered = updatedPipeline[stage].filter(d => d.id !== dealId);
-      if (filtered.length < updatedPipeline[stage].length) {
-        movedDeal = updatedPipeline[stage].find(d => d.id === dealId);
-      }
-      updatedPipeline[stage] = filtered;
-    });
+    const movedDeal = updatedPipeline[oldStage]?.find(d => d.id === dealId);
+
     if (movedDeal) {
-      updatedPipeline[newStage]?.push(movedDeal);
+      updatedPipeline[oldStage] = updatedPipeline[oldStage].filter(d => d.id !== dealId);
+      if (!updatedPipeline[newStage]) {
+        updatedPipeline[newStage] = [];
+      }
+      updatedPipeline[newStage].push(movedDeal);
+      setPipeline(updatedPipeline);
+      savePipelineToStorage(updatedPipeline);
+
+      // Update backend
+      try {
+        const baseUrl = getApiBaseUrl();
+        await fetch(`${baseUrl}/api/deals/${dealId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStage })
+        });
+      } catch (error) {
+        console.error('Error updating deal status:', error);
+      }
     }
+  };
+
+  const handleDeleteDeal = (stageId, dealId) => {
+    const updatedPipeline = { ...pipeline };
+    updatedPipeline[stageId] = updatedPipeline[stageId].filter(d => d.id !== dealId);
     setPipeline(updatedPipeline);
     savePipelineToStorage(updatedPipeline);
-
-    // Update backend
-    try {
-      const baseUrl = getApiBaseUrl();
-      await fetch(`${baseUrl}/api/deals/${dealId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStage })
-      });
-    } catch (error) {
-      console.error('Error updating deal status:', error);
-    }
   };
 
   const handleAddDeal = async (e) => {
@@ -209,32 +253,12 @@ const DealPipeline = memo(function DealPipeline() {
               <DroppableArea stageId={stage.id}>
                 <div className="space-y-2 min-h-96">
                   {pipeline[stage.id]?.map(deal => (
-                    <div
+                    <DraggableDealCard
                       key={deal.id}
-                      draggable
-                      className="bg-dark-600 rounded p-3 cursor-move hover:bg-dark-500 transition-colors border border-dark-500 flex justify-between items-start group"
-                    >
-                      <div className="flex-1">
-                        <p className="font-semibold text-white text-sm">{deal.company_name}</p>
-                        <p className="text-xs text-slate-400 mt-1">{deal.funding_type}</p>
-                        {deal.founders?.length > 0 && (
-                          <p className="text-xs text-amber-400 mt-1">👤 {deal.founders[0].name}</p>
-                        )}
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const updatedPipeline = { ...pipeline };
-                          updatedPipeline[stage.id] = updatedPipeline[stage.id].filter(d => d.id !== deal.id);
-                          setPipeline(updatedPipeline);
-                          savePipelineToStorage(updatedPipeline);
-                        }}
-                        className="ml-2 p-1 text-slate-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                        title="Delete deal"
-                      >
-                        <TrashIcon className="w-4 h-4" />
-                      </button>
-                    </div>
+                      deal={deal}
+                      stageId={stage.id}
+                      onDelete={handleDeleteDeal}
+                    />
                   ))}
                 </div>
               </DroppableArea>
