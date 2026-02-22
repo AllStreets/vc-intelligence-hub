@@ -72,6 +72,7 @@ export function SectorHeatmap({ trends }) {
   return (
     <div className="w-full bg-dark-700 rounded-lg border border-dark-600 p-6">
       <h2 className="text-lg font-bold text-white mb-4">Sector Momentum Heatmap</h2>
+      <p className="text-sm text-slate-400 mb-4">Click on a cell to view trends</p>
 
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
@@ -90,13 +91,13 @@ export function SectorHeatmap({ trends }) {
                 {momentumBuckets.map(bucket => {
                   const cellTrends = getTrendsForCell(sector, bucket);
                   const count = cellTrends.length;
+                  const isSelected = hoveredCell?.sector === sector && hoveredCell?.bucket === bucket;
 
                   return (
                     <td
                       key={`${sector}-${bucket}`}
-                      onMouseEnter={() => setHoveredCell({ sector, bucket, trends: cellTrends })}
-                      onMouseLeave={() => setHoveredCell(null)}
-                      className={`px-2 py-2 text-center cursor-pointer transition-all ${getColor(count)}`}
+                      onClick={() => setHoveredCell({ sector, bucket, trends: cellTrends })}
+                      className={`px-2 py-2 text-center cursor-pointer transition-all ${getColor(count)} ${isSelected ? 'ring-2 ring-white' : ''}`}
                     >
                       <span className="text-white font-semibold">{count}</span>
                     </td>

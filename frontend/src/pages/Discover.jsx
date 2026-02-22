@@ -62,6 +62,12 @@ export function Discover() {
     }
   }
 
+  const handleSearchSubmit = (query) => {
+    if (query.trim()) {
+      addToSearchHistory('Search', 1)
+    }
+  }
+
   const loadAPIStatus = async (forceRefresh = false) => {
     try {
       const status = await fetchAPIStatusWithCache(forceRefresh)
@@ -286,7 +292,7 @@ export function Discover() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             {activeTab === 'trends' ? (
-              <TrendsFeed trends={trends} selectedTrend={selectedTrend} onSelectTrend={setSelectedTrend} />
+              <TrendsFeed trends={trends} selectedTrend={selectedTrend} onSelectTrend={setSelectedTrend} onSearchSubmit={handleSearchSubmit} />
             ) : (
               <DealDiscovery deals={deals} />
             )}

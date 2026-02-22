@@ -11,13 +11,20 @@ const FounderNetworkGraph = memo(function FounderNetworkGraph({ data }) {
   useEffect(() => {
     if (!data || !containerRef.current) return;
 
-    // Deduplicate nodes - keep only unique founder IDs
+    // Deduplicate nodes - keep only unique founder IDs and names
     const uniqueNodeIds = new Set();
+    const uniqueNodeNames = new Set();
     const deduplicatedNodes = data.nodes.filter(node => {
-      if (uniqueNodeIds.has(node.data.id)) {
+      const nodeId = node.data.id;
+      const nodeName = node.data.label;
+
+      // Skip if we've already seen this ID or this name
+      if (uniqueNodeIds.has(nodeId) || uniqueNodeNames.has(nodeName)) {
         return false;
       }
-      uniqueNodeIds.add(node.data.id);
+
+      uniqueNodeIds.add(nodeId);
+      uniqueNodeNames.add(nodeName);
       return true;
     });
 

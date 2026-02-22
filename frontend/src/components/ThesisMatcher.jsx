@@ -27,6 +27,21 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
       if (thesisText.trim()) {
         localStorage.setItem('vc-investment-thesis', thesisText);
         setIsSaved(true);
+
+        // Also save to thesis presets
+        try {
+          const presets = JSON.parse(localStorage.getItem('vc-thesis-presets') || '[]');
+          const newPreset = {
+            id: Date.now(),
+            text: thesisText,
+            timestamp: new Date().toISOString()
+          };
+          // Keep only last 20 presets
+          const updated = [newPreset, ...presets].slice(0, 20);
+          localStorage.setItem('vc-thesis-presets', JSON.stringify(updated));
+        } catch (err) {
+          console.error('Error saving thesis preset:', err);
+        }
       }
     }, 1000); // Auto-save after 1 second of inactivity
 
@@ -151,7 +166,7 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
         </div>
 
         {/* Thesis Statement */}
-        <div className="mb-6">
+        <div className="mb-6 border border-dark-500 rounded-lg p-4">
           <label className="block text-sm font-semibold text-slate-300 mb-3">Your Investment Thesis</label>
           <textarea
             value={thesisText}
@@ -160,7 +175,7 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
               setIsSaved(false);
             }}
             placeholder="Describe your investment thesis, key focus areas, and long-term strategy..."
-            className="w-full px-4 py-3 bg-dark-600 border border-dark-500 rounded text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 text-sm h-24 resize-none"
+            className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded text-white placeholder-slate-400 focus:outline-none focus:border-amber-500 text-sm h-24 resize-none"
           />
           <p className="text-xs text-slate-500 mt-2">This will be saved automatically</p>
         </div>

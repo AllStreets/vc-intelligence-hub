@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Cog6ToothIcon } from '@heroicons/react/24/outline';
+import { Cog6ToothIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
+import { fetchTrendsWithCache, fetchDealsWithCache } from '../services/dataCache';
 
 export function Settings() {
   const [preferences, setPreferences] = useState({
     defaultMomentumThreshold: 50
   });
   const [systemInfo, setSystemInfo] = useState({});
-  const [savedSearches, setSavedSearches] = useState([]);
+  const [searchHistory, setSearchHistory] = useState([]);
   const [thesisPresets, setThesisPresets] = useState([]);
+  const [showThesisDropdown, setShowThesisDropdown] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -17,27 +19,22 @@ export function Settings() {
 
   const fetchSettings = async () => {
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      // Load search history from localStorage
       try {
-        const response = await fetch(`${baseUrl}/api/user/preferences`);
-        const data = await response.json();
-        setPreferences(data || {});
+        const saved = localStorage.getItem('vc-search-history');
+        if (saved) {
+          setSearchHistory(JSON.parse(saved));
+        }
       } catch (err) {
-        // API may not exist yet, use defaults
+        setSearchHistory([]);
       }
 
+      // Load investment thesis presets from localStorage
       try {
-        // Fetch saved searches
-        const searchResponse = await fetch(`${baseUrl}/api/saved-searches`);
-        setSavedSearches(await searchResponse.json());
-      } catch (err) {
-        setSavedSearches([]);
-      }
-
-      try {
-        // Fetch thesis presets
-        const thesisResponse = await fetch(`${baseUrl}/api/saved-thesis`);
-        setThesisPresets(await thesisResponse.json());
+        const saved = localStorage.getItem('vc-thesis-presets');
+        if (saved) {
+          setThesisPresets(JSON.parse(saved));
+        }
       } catch (err) {
         setThesisPresets([]);
       }
@@ -50,28 +47,64 @@ export function Settings() {
 
   const fetchSystemInfo = async () => {
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-      const response = await fetch(`${baseUrl}/api/api-status`);
-      const data = await response.json();
-      setSystemInfo(data);
+      // Get data from cache to display system info
+      const trendsData = await fetchTrendsWithCache();
+      const dealsData = await fetchDealsWithCache();
+
+      const trendCount = (trendsData.trends || []).length;
+      const dealCount = (dealsData.deals || []).length;
+
+      // Count unique founders
+      const founderSet = new Set();
+      (trendsData.trends || []).forEach(trend => {
+        if (trend.founders && Array.isArray(trend.founders)) {
+          trend.founders.forEach(founder => {
+            founderSet.add(founder.id || founder.name);
+          });
+        }
+      });
+
+      setSystemInfo({
+        trendsLoaded: trendCount,
+        dealsLoaded: dealCount,
+        foundersLoaded: founderSet.size,
+        dataSourcesActive: 6,
+        databaseStatus: 'Connected',
+        lastUpdated: new Date().toISOString()
+      });
     } catch (error) {
       console.error('Error fetching system info:', error);
+      setSystemInfo({
+        trendsLoaded: 0,
+        dealsLoaded: 0,
+        foundersLoaded: 0,
+        dataSourcesActive: 0,
+        databaseStatus: 'Error',
+        lastUpdated: null
+      });
     }
   };
 
-  const updatePreferences = async (newPrefs) => {
+  const updatePreferences = (newPrefs) => {
+    setPreferences(newPrefs);
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-      await fetch(`${baseUrl}/api/user/preferences`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newPrefs)
-      });
-      setPreferences(newPrefs);
+      localStorage.setItem('vc-momentum-threshold', JSON.stringify(newPrefs));
     } catch (error) {
-      console.error('Error updating preferences:', error);
+      console.error('Error saving preferences:', error);
     }
   };
+
+  // Load preferences from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('vc-momentum-threshold');
+      if (saved) {
+        setPreferences(JSON.parse(saved));
+      }
+    } catch (error) {
+      console.error('Error loading preferences:', error);
+    }
+  }, []);
 
   if (loading) {
     return (
@@ -110,18 +143,34 @@ export function Settings() {
           </div>
         </section>
 
-        {/* Saved Searches */}
+        {/* Search History */}
         <section className="bg-dark-700 rounded-lg border border-dark-600 p-6">
-          <h2 className="text-lg font-bold text-white mb-4">Saved Searches</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-bold text-white">Search History</h2>
+            {searchHistory.length > 0 && (
+              <button
+                onClick={() => {
+                  setSearchHistory([]);
+                  localStorage.removeItem('vc-search-history');
+                }}
+                className="text-xs text-red-400 hover:text-red-300 transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </div>
 
-          {savedSearches.length === 0 ? (
-            <p className="text-slate-400 text-sm">No saved searches yet</p>
+          {searchHistory.length === 0 ? (
+            <p className="text-slate-400 text-sm">No search history yet</p>
           ) : (
-            <div className="space-y-2">
-              {savedSearches.map((search, idx) => (
-                <div key={idx} className="flex justify-between items-center p-3 bg-dark-600 rounded">
-                  <span className="text-slate-300">{search.name}</span>
-                  <button className="text-xs text-red-400 hover:text-red-300">Delete</button>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {searchHistory.map((search) => (
+                <div key={search.id} className="flex justify-between items-start p-3 bg-dark-600 rounded text-sm">
+                  <div>
+                    <p className="text-slate-300 font-medium">{search.type}</p>
+                    <p className="text-xs text-slate-500">{search.count} items</p>
+                  </div>
+                  <p className="text-xs text-slate-500">{search.displayTime}</p>
                 </div>
               ))}
             </div>
@@ -130,19 +179,36 @@ export function Settings() {
 
         {/* Investment Thesis Presets */}
         <section className="bg-dark-700 rounded-lg border border-dark-600 p-6">
-          <h2 className="text-lg font-bold text-white mb-4">Investment Thesis Presets</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-bold text-white">Investment Thesis Presets</h2>
+            {thesisPresets.length > 0 && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowThesisDropdown(!showThesisDropdown)}
+                  className="flex items-center gap-2 text-sm text-amber-400 hover:text-amber-300 transition-colors"
+                >
+                  View ({thesisPresets.length})
+                  <ChevronDownIcon className={`w-4 h-4 transition-transform ${showThesisDropdown ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showThesisDropdown && (
+                  <div className="absolute top-full right-0 mt-2 bg-dark-600 border border-dark-500 rounded-lg shadow-lg z-50 min-w-96 max-h-64 overflow-y-auto">
+                    {thesisPresets.map((thesis) => (
+                      <div key={thesis.id} className="px-4 py-3 border-b border-dark-500 hover:bg-dark-700 transition-colors text-sm">
+                        <p className="text-slate-300 font-medium mb-1">{new Date(thesis.timestamp).toLocaleDateString()} {new Date(thesis.timestamp).toLocaleTimeString()}</p>
+                        <p className="text-slate-400 text-xs line-clamp-2">{thesis.text}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           {thesisPresets.length === 0 ? (
-            <p className="text-slate-400 text-sm">No thesis presets yet</p>
+            <p className="text-slate-400 text-sm">No thesis presets saved yet. They'll appear here as you save them on the DECIDE page.</p>
           ) : (
-            <div className="space-y-2">
-              {thesisPresets.map((thesis, idx) => (
-                <div key={idx} className="flex justify-between items-center p-3 bg-dark-600 rounded">
-                  <span className="text-slate-300">{thesis.name}</span>
-                  <button className="text-xs text-red-400 hover:text-red-300">Delete</button>
-                </div>
-              ))}
-            </div>
+            <p className="text-slate-400 text-sm">{thesisPresets.length} thesis preset(s) saved</p>
           )}
         </section>
 
@@ -153,36 +219,31 @@ export function Settings() {
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-slate-400">Data Sources Active</p>
-              <p className="text-white font-semibold">{systemInfo.activePlugins?.length || 0}</p>
+              <p className="text-white font-semibold">{systemInfo.dataSourcesActive || 0}</p>
             </div>
             <div>
-              <p className="text-slate-400">Total Trends Loaded</p>
-              <p className="text-white font-semibold">{systemInfo.totalTrends || 0}</p>
+              <p className="text-slate-400">Trends Loaded</p>
+              <p className="text-white font-semibold">{systemInfo.trendsLoaded || 0}</p>
+            </div>
+            <div>
+              <p className="text-slate-400">Deals Loaded</p>
+              <p className="text-white font-semibold">{systemInfo.dealsLoaded || 0}</p>
+            </div>
+            <div>
+              <p className="text-slate-400">Founders Tracked</p>
+              <p className="text-white font-semibold">{systemInfo.foundersLoaded || 0}</p>
             </div>
             <div>
               <p className="text-slate-400">Last Updated</p>
               <p className="text-white font-semibold">
-                {systemInfo.timestamp ? new Date(systemInfo.timestamp).toLocaleTimeString() : 'N/A'}
+                {systemInfo.lastUpdated ? new Date(systemInfo.lastUpdated).toLocaleTimeString() : 'N/A'}
               </p>
             </div>
             <div>
               <p className="text-slate-400">Database Status</p>
-              <p className="text-green-400 font-semibold">Connected</p>
-            </div>
-          </div>
-
-          {/* Data Sources Detail */}
-          <div className="mt-6">
-            <p className="text-slate-400 text-sm mb-3">Data Sources:</p>
-            <div className="grid grid-cols-2 gap-2">
-              {Object.entries(systemInfo.apis || {}).map(([name, config]) => (
-                <div key={name} className="flex items-center gap-2 text-xs">
-                  <div className={`w-2 h-2 rounded-full ${
-                    config.enabled && config.dataAvailable ? 'bg-green-500' : 'bg-yellow-500'
-                  }`} />
-                  <span className="text-slate-300 capitalize">{name.replace('_', ' ')}</span>
-                </div>
-              ))}
+              <p className={`font-semibold ${systemInfo.databaseStatus === 'Connected' ? 'text-green-400' : 'text-red-400'}`}>
+                {systemInfo.databaseStatus || 'Unknown'}
+              </p>
             </div>
           </div>
         </section>

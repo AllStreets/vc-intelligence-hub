@@ -33,10 +33,10 @@ const TrendVelocity = memo(function TrendVelocity({ trends }) {
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value)}
-          className="bg-dark-600 text-slate-300 px-3 py-1 rounded text-sm border border-dark-500"
+          className="bg-dark-700 text-white px-3 py-2 rounded text-sm border border-dark-600 hover:bg-slate-100 hover:text-dark-700 transition-colors cursor-pointer font-semibold"
         >
-          <option value="rising">Rising Fastest</option>
-          <option value="falling">Falling Fastest</option>
+          <option value="rising" className="bg-dark-700 text-white">Rising Fastest</option>
+          <option value="falling" className="bg-dark-700 text-white">Falling Fastest</option>
         </select>
       </div>
 

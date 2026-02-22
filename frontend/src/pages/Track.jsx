@@ -84,14 +84,15 @@ export function Track() {
         {/* Historical Trend Chart */}
         <div className="bg-dark-700 rounded-lg border border-dark-600 p-6">
           <h2 className="text-lg font-bold text-white mb-4">Trend Momentum Over Time</h2>
-          <p className="text-sm text-slate-400 mb-4">Click on a trend name to add it to the chart</p>
-          <TrendHistoryChart trends={trends} />
+          <p className="text-sm text-slate-400 mb-4">Last {dateRange} days | Click on a trend name to add it to the chart</p>
+          <TrendHistoryChart key={dateRange} trends={trends} dateRange={dateRange} />
         </div>
 
         {/* Sector Distribution Chart */}
         <div className="bg-dark-700 rounded-lg border border-dark-600 p-6">
           <h2 className="text-lg font-bold text-white mb-4">Sector Distribution Trends</h2>
-          <SectorDistributionChart />
+          <p className="text-sm text-slate-400 mb-4">Last {dateRange} days</p>
+          <SectorDistributionChart key={dateRange} dateRange={dateRange} />
         </div>
 
         {/* Velocity Table */}

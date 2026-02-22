@@ -1,7 +1,7 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useState, useEffect, memo } from 'react';
 
-const TrendHistoryChart = memo(function TrendHistoryChart({ trends = [] }) {
+const TrendHistoryChart = memo(function TrendHistoryChart({ trends = [], dateRange = 30 }) {
   const [data, setData] = useState([]);
   const [selectedTrends, setSelectedTrends] = useState([]);
   const [displayTrends, setDisplayTrends] = useState([]);
@@ -19,17 +19,17 @@ const TrendHistoryChart = memo(function TrendHistoryChart({ trends = [] }) {
       setSelectedTrends(topTrends.slice(0, 3).map(t => t.id));
 
       // Generate mock historical data with actual trend names
-      const mockData = generateMockHistoricalData(topTrends);
+      const mockData = generateMockHistoricalData(topTrends, dateRange);
       setData(mockData);
       setLoading(false);
     }
-  }, [trends]);
+  }, [trends, dateRange]);
 
-  const generateMockHistoricalData = (trendsToInclude) => {
+  const generateMockHistoricalData = (trendsToInclude, days = 30) => {
     const data = [];
     const today = new Date();
 
-    for (let i = 29; i >= 0; i--) {
+    for (let i = days - 1; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
 
@@ -40,7 +40,7 @@ const TrendHistoryChart = memo(function TrendHistoryChart({ trends = [] }) {
       // Add mock values for each trend
       trendsToInclude.forEach((trend, idx) => {
         const baseValue = 40 + idx * 5;
-        dayData[trend.id] = baseValue + Math.random() * 30 + i * 0.5;
+        dayData[trend.id] = baseValue + Math.random() * 30 + (i / days) * 20;
       });
 
       data.push(dayData);

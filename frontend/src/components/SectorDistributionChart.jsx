@@ -1,20 +1,34 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 
-const SectorDistributionChart = memo(function SectorDistributionChart() {
-  // Mock data: average momentum per sector over 30 days
-  const data = [
-    { date: 'Jan 1', 'AI/ML': 45, Fintech: 40, Climate: 35, Healthcare: 30, Web3: 25 },
-    { date: 'Jan 5', 'AI/ML': 48, Fintech: 42, Climate: 38, Healthcare: 32, Web3: 28 },
-    { date: 'Jan 10', 'AI/ML': 52, Fintech: 45, Climate: 42, Healthcare: 35, Web3: 30 },
-    { date: 'Jan 15', 'AI/ML': 55, Fintech: 48, Climate: 45, Healthcare: 38, Web3: 35 },
-    { date: 'Jan 20', 'AI/ML': 58, Fintech: 50, Climate: 48, Healthcare: 40, Web3: 38 },
-    { date: 'Jan 25', 'AI/ML': 60, Fintech: 52, Climate: 50, Healthcare: 42, Web3: 40 },
-    { date: 'Jan 30', 'AI/ML': 62, Fintech: 55, Climate: 52, Healthcare: 45, Web3: 42 },
-  ];
-
+const SectorDistributionChart = memo(function SectorDistributionChart({ dateRange = 30 }) {
   const colors = ['#4F46E5', '#EC4899', '#10B981', '#F59E0B', '#06B6D4'];
   const sectors = ['AI/ML', 'Fintech', 'Climate', 'Healthcare', 'Web3'];
+
+  // Generate mock data: average momentum per sector over the specified date range
+  const data = useMemo(() => {
+    const result = [];
+    const today = new Date();
+    const step = Math.max(1, Math.floor(dateRange / 7)); // Show roughly 7 data points
+
+    for (let i = dateRange - 1; i >= 0; i -= step) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+
+      const dataPoint = {
+        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      };
+
+      sectors.forEach((sector, idx) => {
+        const baseValue = 40 + idx * 5;
+        dataPoint[sector] = baseValue + Math.random() * 20 + (dateRange - i) / dateRange * 10;
+      });
+
+      result.push(dataPoint);
+    }
+
+    return result;
+  }, [dateRange]);
 
   return (
     <ResponsiveContainer width="100%" height={300}>

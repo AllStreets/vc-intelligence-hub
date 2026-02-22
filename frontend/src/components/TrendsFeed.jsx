@@ -37,7 +37,7 @@ const trendColors = {
   'other': 'from-amber-600 to-amber-700',
 }
 
-export default function TrendsFeed({ trends, selectedTrend, onSelectTrend }) {
+export default function TrendsFeed({ trends, selectedTrend, onSelectTrend, onSearchSubmit }) {
   const [allTrends, setAllTrends] = useState([]);
   const [filteredTrends, setFilteredTrends] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -120,7 +120,7 @@ export default function TrendsFeed({ trends, selectedTrend, onSelectTrend }) {
 
   return (
     <div>
-      <SearchFilter onSearch={handleSearch} onFilterChange={handleFilterChange} />
+      <SearchFilter onSearch={handleSearch} onFilterChange={handleFilterChange} onSearchSubmit={onSearchSubmit} />
 
       {filteredTrends.length === 0 ? (
         <div className="card text-center py-12">
