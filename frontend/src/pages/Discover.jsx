@@ -4,6 +4,7 @@ import TrendDrilldown from '../components/TrendDrilldown'
 import DealDiscovery from '../components/DealDiscovery'
 import APIStatusBar from '../components/APIStatusBar'
 import { fetchTrends, fetchDeals, fetchAPIStatus } from '../services/api'
+import { fetchTrendsWithCache, fetchDealsWithCache, fetchAPIStatusWithCache, clearAllCache } from '../services/dataCache'
 
 export function Discover() {
   const [trends, setTrends] = useState([])
@@ -18,20 +19,20 @@ export function Discover() {
     loadAPIStatus()
   }, [])
 
-  const loadAPIStatus = async () => {
+  const loadAPIStatus = async (forceRefresh = false) => {
     try {
-      const status = await fetchAPIStatus()
+      const status = await fetchAPIStatusWithCache(forceRefresh)
       setApiStatus(status)
     } catch (err) {
       console.error('Error fetching API status:', err)
     }
   }
 
-  const handleLoadTrends = async () => {
+  const handleLoadTrends = async (forceRefresh = false) => {
     setLoading(true)
     setError(null)
     try {
-      const data = await fetchTrends()
+      const data = await fetchTrendsWithCache(forceRefresh)
       setTrends(data.trends || [])
       if (data.trends && data.trends.length > 0) {
         setSelectedTrend(data.trends[0])
@@ -44,11 +45,11 @@ export function Discover() {
     }
   }
 
-  const handleLoadDeals = async () => {
+  const handleLoadDeals = async (forceRefresh = false) => {
     setLoading(true)
     setError(null)
     try {
-      const data = await fetchDeals()
+      const data = await fetchDealsWithCache(forceRefresh)
       setDeals(data.deals || [])
       setActiveTab('deals')
     } catch (err) {
@@ -56,6 +57,15 @@ export function Discover() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleRefreshData = async () => {
+    clearAllCache()
+    await Promise.all([
+      handleLoadTrends(true),
+      handleLoadDeals(true)
+    ])
+    loadAPIStatus()
   }
 
   return (
@@ -101,7 +111,7 @@ export function Discover() {
 
           {trends.length > 0 && (
             <button
-              onClick={handleLoadTrends}
+              onClick={handleRefreshData}
               disabled={loading}
               className="btn btn-ghost"
               title="Refresh trend data from all plugins"

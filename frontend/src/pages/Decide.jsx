@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ThesisMatcher } from '../components/ThesisMatcher';
 import { WatchlistManager } from '../components/WatchlistManager';
 import { DealPipeline } from '../components/DealPipeline';
+import { fetchTrendsWithCache, fetchDealsWithCache } from '../services/dataCache';
 
 export function Decide() {
   const [activeTab, setActiveTab] = useState('thesis');
@@ -15,14 +16,10 @@ export function Decide() {
 
   const fetchData = async () => {
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-      const [trendsRes, dealsRes] = await Promise.all([
-        fetch(`${baseUrl}/api/trends/scored`),
-        fetch(`${baseUrl}/api/deals`)
+      const [trendsData, dealsData] = await Promise.all([
+        fetchTrendsWithCache(),
+        fetchDealsWithCache()
       ]);
-
-      const trendsData = await trendsRes.json();
-      const dealsData = await dealsRes.json();
 
       setTrends(trendsData.trends || []);
       setDeals(dealsData.deals || []);

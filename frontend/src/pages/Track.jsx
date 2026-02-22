@@ -3,6 +3,7 @@ import { TrendHistoryChart } from '../components/TrendHistoryChart';
 import { SectorDistributionChart } from '../components/SectorDistributionChart';
 import { TrendVelocity } from '../components/TrendVelocity';
 import { exportPDF, exportCSV } from '../utils/exportUtils';
+import { fetchTrendsWithCache } from '../services/dataCache';
 
 export function Track() {
   const [trends, setTrends] = useState([]);
@@ -15,9 +16,7 @@ export function Track() {
 
   const fetchTrends = async () => {
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-      const response = await fetch(`${baseUrl}/api/trends/scored`);
-      const data = await response.json();
+      const data = await fetchTrendsWithCache();
       setTrends(data.trends || []);
     } catch (error) {
       console.error('Error fetching trends:', error);

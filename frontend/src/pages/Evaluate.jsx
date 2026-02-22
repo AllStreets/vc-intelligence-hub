@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FounderNetworkGraph } from '../components/FounderNetworkGraph';
 import { SectorHeatmap } from '../components/SectorHeatmap';
+import { fetchTrendsWithCache } from '../services/dataCache';
 
 export function Evaluate() {
   const [networkData, setNetworkData] = useState(null);
@@ -24,10 +25,8 @@ export function Evaluate() {
       const networkJson = await networkResponse.json();
       setNetworkData(networkJson);
 
-      // Fetch trends for heatmap
-      const trendsResponse = await fetch(`${baseUrl}/api/trends/scored`);
-      if (!trendsResponse.ok) throw new Error('Failed to fetch trends');
-      const trendsJson = await trendsResponse.json();
+      // Fetch trends for heatmap (use cache)
+      const trendsJson = await fetchTrendsWithCache();
       setTrends(trendsJson.trends || []);
     } catch (err) {
       console.error('Error fetching EVALUATE page data:', err);

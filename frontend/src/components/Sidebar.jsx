@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { usePageContext } from './PageRouter';
 import {
   MagnifyingGlassIcon,
@@ -6,6 +7,7 @@ import {
   ChartBarIcon,
   Cog6ToothIcon
 } from '@heroicons/react/24/outline';
+import { fetchTrendsWithCache, fetchDealsWithCache } from '../services/dataCache';
 
 const pages = [
   { id: 'discover', label: 'DISCOVER', icon: MagnifyingGlassIcon, color: 'slate-300' },
@@ -17,6 +19,41 @@ const pages = [
 
 export function Sidebar() {
   const { activePage, setActivePage } = usePageContext();
+  const [trendCount, setTrendCount] = useState(0);
+  const [dealCount, setDealCount] = useState(0);
+  const [founderCount, setFounderCount] = useState(0);
+
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    try {
+      const trendsData = await fetchTrendsWithCache();
+      const dealsData = await fetchDealsWithCache();
+
+      // Count trends
+      const trends = trendsData.trends || [];
+      setTrendCount(trends.length);
+
+      // Count deals
+      const deals = dealsData.deals || [];
+      setDealCount(deals.length);
+
+      // Count unique founders from trends
+      const founderSet = new Set();
+      trends.forEach(trend => {
+        if (trend.founders && Array.isArray(trend.founders)) {
+          trend.founders.forEach(founder => {
+            founderSet.add(founder.id || founder.name);
+          });
+        }
+      });
+      setFounderCount(founderSet.size);
+    } catch (error) {
+      console.error('Error loading sidebar stats:', error);
+    }
+  };
 
   return (
     <aside className="w-64 bg-dark-800 border-r border-dark-700 flex flex-col p-6">
@@ -51,9 +88,9 @@ export function Sidebar() {
 
       {/* Footer Info */}
       <div className="text-xs text-slate-500 border-t border-dark-700 pt-4">
-        <p>155 Trends</p>
-        <p>100+ Founders</p>
-        <p>97 Deals</p>
+        <p>{trendCount} Trends</p>
+        <p>{founderCount}+ Founders</p>
+        <p>{dealCount} Deals</p>
       </div>
     </aside>
   );
