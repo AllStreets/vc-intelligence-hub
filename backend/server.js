@@ -115,6 +115,54 @@ function transformTrendsForFrontend(trends) {
   return trends.map(transformTrendForFrontend);
 }
 
+// Generate mock founder data for demo (in production, this would come from founder data sources)
+function generateMockFounders(trend) {
+  // Seed random based on trend name for consistency
+  const seed = trend.name.charCodeAt(0) + trend.name.charCodeAt(1);
+  const random = (seed % 10) / 10;
+
+  // Only generate founders for some trends (30% chance)
+  if (random < 0.7) return [];
+
+  const firstNames = ['Sarah', 'Alex', 'Jordan', 'Casey', 'Morgan', 'Riley', 'Taylor', 'Avery', 'Quinn', 'Blake'];
+  const lastNames = ['Chen', 'Rodriguez', 'Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Miller', 'Davis', 'Wilson'];
+  const titles = ['CEO', 'CTO', 'Co-Founder', 'Engineering Lead', 'Product Lead'];
+
+  const founderCount = (seed % 3) + 1; // 1-3 founders
+  const founders = [];
+
+  for (let i = 0; i < founderCount && i < 2; i++) {
+    const firstIdx = (seed + i * 100) % firstNames.length;
+    const lastIdx = (seed + i * 200) % lastNames.length;
+    const titleIdx = (seed + i * 300) % titles.length;
+
+    founders.push({
+      id: `founder-${trend.id}-${i}`,
+      name: `${firstNames[firstIdx]} ${lastNames[lastIdx]}`,
+      title: titles[titleIdx],
+      email: `${firstNames[firstIdx].toLowerCase()}.${lastNames[lastIdx].toLowerCase()}@company.com`,
+      social: {
+        twitter: `@${firstNames[firstIdx].toLowerCase()}${lastNames[lastIdx].toLowerCase()}`,
+        linkedin: `linkedin.com/in/${firstNames[firstIdx].toLowerCase()}-${lastNames[lastIdx].toLowerCase()}`,
+        angellist: `angel.co/u/${firstNames[firstIdx].toLowerCase()}-${lastNames[lastIdx].toLowerCase()}`
+      },
+      sectors: [trend.category],
+      pastCompanies: [],
+      investmentTrack: { exits: Math.floor(random * 5), averageROI: Math.floor(random * 300) + 50 }
+    });
+  }
+
+  return founders;
+}
+
+// Enrich trends with founder data
+function enrichTrendsWithFounders(trends) {
+  return trends.map(trend => ({
+    ...trend,
+    founders: generateMockFounders(trend)
+  }));
+}
+
 // ============================================
 // HEALTH & STATUS ENDPOINTS
 // ============================================
@@ -157,7 +205,8 @@ app.get('/api/trends/scored', async (req, res) => {
     const deduplicated = trendScoringService.deduplicateTrends(trends);
     const scored = trendScoringService.scoreTrends(deduplicated);
     const enriched = enrichTrendsWithSources(scored);
-    const transformed = transformTrendsForFrontend(enriched);
+    const withFounders = enrichTrendsWithFounders(enriched);
+    const transformed = transformTrendsForFrontend(withFounders);
 
     res.json({
       trends: transformed,
