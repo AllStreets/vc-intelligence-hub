@@ -57,6 +57,15 @@ export default function DealDiscovery({ deals, onSearchSubmit }) {
     setSelectedDealTypes([]);
   };
 
+  const handleSearchWheel = (e) => {
+    // Allow scrolling through the search input
+    // Find the scrollable parent container (main element in App.jsx)
+    let scrollableParent = e.currentTarget.closest('main');
+    if (scrollableParent && scrollableParent.scrollHeight > scrollableParent.clientHeight) {
+      scrollableParent.scrollTop += e.deltaY;
+    }
+  };
+
   if (!deals || deals.length === 0) {
     return (
       <div className="card text-center py-12">
@@ -81,6 +90,7 @@ export default function DealDiscovery({ deals, onSearchSubmit }) {
                 onSearchSubmit(e.target.value);
               }
             }}
+            onWheel={handleSearchWheel}
             className="w-full px-4 py-3 bg-slate-700 text-white rounded-lg border border-slate-600 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
           />
           <svg className="absolute right-3 top-3 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
