@@ -77,8 +77,8 @@ export default function DealDiscovery({ deals, onSearchSubmit }) {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={(e) => {
-              if (e.key === 'Enter' && searchQuery.trim() && onSearchSubmit) {
-                onSearchSubmit(searchQuery);
+              if (e.key === 'Enter' && e.target.value.trim() && onSearchSubmit) {
+                onSearchSubmit(e.target.value);
               }
             }}
             className="w-full px-4 py-3 bg-slate-700 text-white rounded-lg border border-slate-600 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"

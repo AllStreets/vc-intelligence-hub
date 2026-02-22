@@ -23,6 +23,9 @@ export function Discover() {
   useEffect(() => {
     loadAPIStatus()
     loadSearchHistory()
+    // Auto-load cached data on mount
+    loadCachedTrends()
+    loadCachedDeals()
   }, [])
 
   useEffect(() => {
@@ -119,6 +122,18 @@ export function Discover() {
     }
   }
 
+  const loadCachedTrends = async () => {
+    try {
+      const data = await fetchTrendsWithCache()
+      if (data.trends && data.trends.length > 0) {
+        setTrends(data.trends || [])
+        setSelectedTrend(data.trends[0])
+      }
+    } catch (err) {
+      console.error('Error loading cached trends:', err)
+    }
+  }
+
   const handleLoadTrends = async (forceRefresh = false) => {
     setLoading(true)
     setError(null)
@@ -133,6 +148,17 @@ export function Discover() {
       setError(err.message || 'Failed to load trends')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadCachedDeals = async () => {
+    try {
+      const data = await fetchDealsWithCache()
+      if (data.deals && data.deals.length > 0) {
+        setDeals(data.deals || [])
+      }
+    } catch (err) {
+      console.error('Error loading cached deals:', err)
     }
   }
 
