@@ -17,10 +17,24 @@ export function Discover() {
   const [activeTab, setActiveTab] = useState('trends')
   const [searchHistory, setSearchHistory] = useState([])
   const [showHistory, setShowHistory] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
 
   useEffect(() => {
     loadAPIStatus()
     loadSearchHistory()
+  }, [])
+
+  useEffect(() => {
+    const handleScroll = (e) => {
+      const scrollPosition = e.target.scrollTop || 0;
+      setIsScrolled(scrollPosition > 100);
+    };
+
+    const mainElement = document.querySelector('main');
+    if (mainElement) {
+      mainElement.addEventListener('scroll', handleScroll);
+      return () => mainElement.removeEventListener('scroll', handleScroll);
+    }
   }, [])
 
   const loadSearchHistory = () => {
@@ -120,20 +134,22 @@ export function Discover() {
     <div>
       <header className="border-b border-slate-700 border-t-4 border-t-slate-500 bg-dark-800 sticky top-0 z-40">
         <div className="px-6 py-6">
-          <div className="flex items-center justify-between gap-6 mb-6">
-            <div>
-              <h1 className="text-4xl font-display font-bold mb-2 text-slate-300">
-                DISCOVER
-              </h1>
-              <p className="text-slate-400 font-light">Real-time trend analysis for venture capital</p>
+          {!isScrolled && (
+            <div className="flex items-center justify-between gap-6 mb-6">
+              <div>
+                <h1 className="text-4xl font-display font-bold mb-2 text-slate-300">
+                  DISCOVER
+                </h1>
+                <p className="text-slate-400 font-light">Real-time trend analysis for venture capital</p>
+              </div>
+              <div className="text-right text-sm text-gray-400">
+                <p>Market Intelligence Platform</p>
+                <p className="text-xs mt-1">{new Date().toLocaleDateString()}</p>
+              </div>
             </div>
-            <div className="text-right text-sm text-gray-400">
-              <p>Market Intelligence Platform</p>
-              <p className="text-xs mt-1">{new Date().toLocaleDateString()}</p>
-            </div>
-          </div>
+          )}
 
-          <APIStatusBar status={apiStatus} />
+          <APIStatusBar status={apiStatus} isCollapsed={isScrolled} />
         </div>
       </header>
 

@@ -91,24 +91,14 @@ const DealPipeline = memo(function DealPipeline() {
     e.preventDefault();
 
     try {
-      const baseUrl = getApiBaseUrl();
-
-      const dealPayload = {
+      // Create deal with local ID
+      const newDeal = {
+        id: Date.now().toString(),
         company_name: formData.company_name,
         funding_type: formData.funding_type,
         status: formData.status,
         founders: formData.founders ? [{ name: formData.founders }] : []
       };
-
-      const response = await fetch(`${baseUrl}/api/deals`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dealPayload)
-      });
-
-      if (!response.ok) throw new Error('Failed to create deal');
-
-      const newDeal = await response.json();
 
       // Update local state
       setDeals([...deals, newDeal]);
@@ -118,6 +108,25 @@ const DealPipeline = memo(function DealPipeline() {
       }
       updatedPipeline[formData.status].push(newDeal);
       setPipeline(updatedPipeline);
+
+      // Try to sync with backend if available
+      try {
+        const baseUrl = getApiBaseUrl();
+        const dealPayload = {
+          company_name: formData.company_name,
+          funding_type: formData.funding_type,
+          status: formData.status,
+          founders: formData.founders ? [{ name: formData.founders }] : []
+        };
+
+        await fetch(`${baseUrl}/api/deals`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dealPayload)
+        });
+      } catch (backendError) {
+        console.warn('Backend sync failed, using local storage:', backendError);
+      }
 
       // Reset form
       setFormData({

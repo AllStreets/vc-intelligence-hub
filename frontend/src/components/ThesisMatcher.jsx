@@ -271,15 +271,21 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
 
         <div className="space-y-2 max-h-96 overflow-y-auto">
           {results.slice(0, 20).map(item => (
-            <div key={item.id} className={`p-3 rounded flex justify-between items-center ${getMatchColor(item.match.percentage)}`}>
-              <div className="flex-1">
-                <p className="font-semibold">{item.company_name || item.name}</p>
-                <p className="text-xs opacity-80">{item.match.reasons.join(' • ')}</p>
+            <a
+              key={item.id}
+              href={item.sources?.[0]?.url || item.url || '#'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`p-3 rounded flex justify-between items-center cursor-pointer transition-transform hover:scale-105 ${getMatchColor(item.match.percentage)}`}
+            >
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold truncate">{item.company_name || item.name}</p>
+                <p className="text-xs opacity-80 line-clamp-2">{item.match.reasons.join(' • ')}</p>
               </div>
-              <div className="text-right">
+              <div className="text-right flex-shrink-0 ml-2">
                 <span className="font-bold text-lg">{item.match.percentage}%</span>
               </div>
-            </div>
+            </a>
           ))}
         </div>
       </div>

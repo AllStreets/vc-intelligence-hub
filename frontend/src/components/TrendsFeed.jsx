@@ -167,9 +167,9 @@ export default function TrendsFeed({ trends, selectedTrend, onSelectTrend, onSea
               }`}
             >
               <div className="flex items-start justify-between gap-4 mb-3">
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <h3 className="font-display font-bold text-lg truncate">{trend.name}</h3>
-                  <p className="text-sm text-gray-400 mt-1 capitalize">{trend.category?.replace('-', ' ')}</p>
+                  <p className="text-sm text-gray-400 mt-1 capitalize truncate">{trend.category?.replace('-', ' ')}</p>
                 </div>
                 <div className="flex items-center gap-3 flex-shrink-0">
                   <button

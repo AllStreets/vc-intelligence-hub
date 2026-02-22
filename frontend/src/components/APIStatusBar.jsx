@@ -1,4 +1,4 @@
-export default function APIStatusBar({ status }) {
+export default function APIStatusBar({ status, isCollapsed = false }) {
   const apis = status.apis || {}
   const activePlugins = status.activePlugins || []
   const totalTrends = status.totalTrends || 0
@@ -45,25 +45,29 @@ export default function APIStatusBar({ status }) {
 
   return (
     <div>
-      <p className="text-xs text-slate-400 mb-2 font-semibold">
+      <p className="text-xs text-slate-400 font-semibold">
         DATA SOURCES ({activePlugins.length} active, {totalTrends} total trends):
       </p>
-      <div className="flex flex-wrap gap-2">
-        {Object.entries(apis).map(([name, config]) => (
-          <div
-            key={name}
-            className={`status-badge px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${getTrendColor(config)}`}
-            title={getTitle(name, config)}
-          >
-            <span
-              className="status-indicator mr-2 inline-block w-1.5 h-1.5 rounded-full"
-              style={{ backgroundColor: getIndicatorColor(config) }}
-            ></span>
-            {name.replace('_', ' ')}
+      {!isCollapsed && (
+        <>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {Object.entries(apis).map(([name, config]) => (
+              <div
+                key={name}
+                className={`status-badge px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${getTrendColor(config)}`}
+                title={getTitle(name, config)}
+              >
+                <span
+                  className="status-indicator mr-2 inline-block w-1.5 h-1.5 rounded-full"
+                  style={{ backgroundColor: getIndicatorColor(config) }}
+                ></span>
+                {name.replace('_', ' ')}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      <p className="text-xs text-slate-500 mt-2">Green = data available | Yellow = needs API key or waiting | Gray = disabled</p>
+          <p className="text-xs text-slate-500 mt-2">Green = data available | Yellow = needs API key or waiting | Gray = disabled</p>
+        </>
+      )}
     </div>
   )
 }
