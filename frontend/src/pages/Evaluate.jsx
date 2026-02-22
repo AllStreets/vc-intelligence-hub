@@ -1,26 +1,36 @@
 import { useState, useEffect } from 'react';
 import { FounderNetworkGraph } from '../components/FounderNetworkGraph';
+import { SectorHeatmap } from '../components/SectorHeatmap';
 
 export function Evaluate() {
   const [networkData, setNetworkData] = useState(null);
+  const [trends, setTrends] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchNetworkData();
+    fetchData();
   }, []);
 
-  const fetchNetworkData = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
       setError(null);
       const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-      const response = await fetch(`${baseUrl}/api/founder-network`);
-      if (!response.ok) throw new Error('Failed to fetch founder network');
-      const data = await response.json();
-      setNetworkData(data);
+
+      // Fetch founder network data
+      const networkResponse = await fetch(`${baseUrl}/api/founder-network`);
+      if (!networkResponse.ok) throw new Error('Failed to fetch founder network');
+      const networkJson = await networkResponse.json();
+      setNetworkData(networkJson);
+
+      // Fetch trends for heatmap
+      const trendsResponse = await fetch(`${baseUrl}/api/trends/scored`);
+      if (!trendsResponse.ok) throw new Error('Failed to fetch trends');
+      const trendsJson = await trendsResponse.json();
+      setTrends(trendsJson.trends || []);
     } catch (err) {
-      console.error('Error fetching founder network:', err);
+      console.error('Error fetching EVALUATE page data:', err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -41,7 +51,7 @@ export function Evaluate() {
 
       {loading ? (
         <div className="flex items-center justify-center py-16">
-          <p className="text-slate-400">Loading founder network...</p>
+          <p className="text-slate-400">Loading EVALUATE data...</p>
         </div>
       ) : (
         <div className="space-y-6">
@@ -51,6 +61,10 @@ export function Evaluate() {
               {networkData?.founderCount || 0} founders, {networkData?.connectionCount || 0} connections
             </p>
             <FounderNetworkGraph data={networkData} />
+          </div>
+
+          <div>
+            <SectorHeatmap trends={trends} />
           </div>
         </div>
       )}
