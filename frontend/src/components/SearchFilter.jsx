@@ -13,12 +13,17 @@ export function SearchFilter({ onSearch, onFilterChange, onSearchSubmit }) {
   const handleSearch = (e) => {
     const query = e.target.value;
     setSearchQuery(query);
-    onSearch(query);
   };
 
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && onSearchSubmit) {
-      onSearchSubmit(searchQuery);
+    if (e.key === 'Enter') {
+      // Only search if query is not empty
+      if (searchQuery.trim()) {
+        onSearch(searchQuery);
+        if (onSearchSubmit) {
+          onSearchSubmit(searchQuery);
+        }
+      }
     }
   };
 

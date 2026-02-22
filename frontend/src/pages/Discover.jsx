@@ -34,11 +34,10 @@ export function Discover() {
     }
   }
 
-  const addToSearchHistory = (type, count) => {
+  const addToSearchHistory = (query) => {
     const newEntry = {
       id: Date.now(),
-      type,
-      count,
+      query,
       timestamp: new Date().toISOString(),
       displayTime: new Date().toLocaleTimeString()
     }
@@ -64,7 +63,7 @@ export function Discover() {
 
   const handleSearchSubmit = (query) => {
     if (query.trim()) {
-      addToSearchHistory('Search', 1)
+      addToSearchHistory(query)
     }
   }
 
@@ -85,7 +84,6 @@ export function Discover() {
       setTrends(data.trends || [])
       if (data.trends && data.trends.length > 0) {
         setSelectedTrend(data.trends[0])
-        addToSearchHistory('Trends', data.trends.length)
       }
       setActiveTab('trends')
     } catch (err) {
@@ -101,7 +99,6 @@ export function Discover() {
     try {
       const data = await fetchDealsWithCache(forceRefresh)
       setDeals(data.deals || [])
-      addToSearchHistory('Deals', (data.deals || []).length)
       setActiveTab('deals')
     } catch (err) {
       setError(err.message || 'Failed to load deals')

@@ -167,8 +167,7 @@ export function Settings() {
               {searchHistory.map((search) => (
                 <div key={search.id} className="flex justify-between items-start p-3 bg-dark-600 rounded text-sm">
                   <div>
-                    <p className="text-slate-300 font-medium">{search.type}</p>
-                    <p className="text-xs text-slate-500">{search.count} items</p>
+                    <p className="text-slate-300 font-medium">"{search.query}"</p>
                   </div>
                   <p className="text-xs text-slate-500">{search.displayTime}</p>
                 </div>

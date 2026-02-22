@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { TrashIcon } from '@heroicons/react/24/outline';
 
 const dealTypeCategories = ['Funding', 'Investment', 'Funding Round', 'Seed/Series A', 'Series B', 'Series C', 'IPO', 'Acquisition'];
 
@@ -7,6 +8,15 @@ export default function DealDiscovery({ deals }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDealTypes, setSelectedDealTypes] = useState([]);
   const [showFilter, setShowFilter] = useState(false);
+  const [deletedDealIds, setDeletedDealIds] = useState([]);
+
+  const deleteDeal = (dealId) => {
+    setDeletedDealIds([...deletedDealIds, dealId]);
+  };
+
+  const undoDeleteDeal = (dealId) => {
+    setDeletedDealIds(deletedDealIds.filter(id => id !== dealId));
+  };
 
   useEffect(() => {
     if (!deals) {
@@ -14,7 +24,7 @@ export default function DealDiscovery({ deals }) {
       return;
     }
 
-    let filtered = deals;
+    let filtered = deals.filter(deal => !deletedDealIds.includes(deal.id));
 
     // Apply search filter
     if (searchQuery) {
@@ -33,7 +43,7 @@ export default function DealDiscovery({ deals }) {
     }
 
     setFilteredDeals(filtered);
-  }, [deals, searchQuery, selectedDealTypes]);
+  }, [deals, searchQuery, selectedDealTypes, deletedDealIds]);
 
   const toggleDealType = (type) => {
     const updated = selectedDealTypes.includes(type)
@@ -140,7 +150,7 @@ export default function DealDiscovery({ deals }) {
                     <p className="text-sm text-gray-400 mt-1">{deal.data.title}</p>
                   )}
                 </div>
-                <div className="flex-shrink-0">
+                <div className="flex items-center gap-3 flex-shrink-0">
                   <span className={`px-3 py-1 rounded-full text-sm font-semibold whitespace-nowrap ${
                     deal.funding_type?.includes('Series A') ? 'bg-yellow-900 text-yellow-200' :
                     deal.funding_type?.includes('Series B') ? 'bg-orange-900 text-orange-200' :
@@ -151,6 +161,13 @@ export default function DealDiscovery({ deals }) {
                   }`}>
                     {deal.funding_type}
                   </span>
+                  <button
+                    onClick={() => deleteDeal(deal.id)}
+                    className="p-2 rounded-lg hover:bg-red-900/20 transition-colors text-slate-400 hover:text-red-400"
+                    title="Remove from pipeline"
+                  >
+                    <TrashIcon className="w-5 h-5" />
+                  </button>
                 </div>
               </div>
 
