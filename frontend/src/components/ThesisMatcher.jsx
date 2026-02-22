@@ -35,6 +35,24 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
     }
   }, []);
 
+  // Load momentum threshold from Settings on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('vc-momentum-threshold');
+    if (saved) {
+      try {
+        const preferences = JSON.parse(saved);
+        if (preferences.defaultMomentumThreshold !== undefined) {
+          setThesis(prev => ({
+            ...prev,
+            minMomentum: preferences.defaultMomentumThreshold
+          }));
+        }
+      } catch (err) {
+        console.error('Error loading momentum threshold:', err);
+      }
+    }
+  }, []);
+
   // Auto-save thesis text to localStorage with debouncing
   useEffect(() => {
     const saveTimer = setTimeout(() => {
