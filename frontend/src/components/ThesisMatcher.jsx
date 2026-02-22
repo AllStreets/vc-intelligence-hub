@@ -59,30 +59,30 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
 
   // Score trends/deals against thesis
   const scoreOpportunity = (item) => {
-    let matches = 0;
-    let totalCriteria = 0;
     const reasons = [];
 
-    // Check sector
+    // If sectors are selected, item must match at least one
     if (thesis.sectors.length > 0) {
-      totalCriteria++;
       const itemSector = item.category?.replace('-', ' ') || item.funding_type;
-      if (thesis.sectors.includes(itemSector)) {
-        matches++;
-        reasons.push(`✓ ${itemSector}`);
+      if (!thesis.sectors.includes(itemSector)) {
+        return { percentage: 0, reasons: [] }; // Filter out non-matching sectors
       }
+      reasons.push(`✓ ${itemSector}`);
     }
 
-    // Check stage
+    // If stages are selected, item must match at least one
     if (thesis.stages.length > 0) {
-      totalCriteria++;
-      if (thesis.stages.some(stage => item.funding_type?.includes(stage))) {
-        matches++;
-        reasons.push(`✓ ${item.funding_type}`);
+      const stageMatch = thesis.stages.some(stage => item.funding_type?.includes(stage));
+      if (!stageMatch) {
+        return { percentage: 0, reasons: [] }; // Filter out non-matching stages
       }
+      reasons.push(`✓ ${item.funding_type}`);
     }
 
-    // Check momentum
+    // Check momentum threshold
+    let matches = 0;
+    let totalCriteria = 0;
+
     if (thesis.minMomentum > 0) {
       totalCriteria++;
       const momentum = Math.min(100, item.momentum_score * 2);
@@ -115,7 +115,13 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
       }
     }
 
-    const percentage = totalCriteria > 0 ? Math.round((matches / totalCriteria) * 100) : 0;
+    // If no criteria set, show all items with high score
+    if (thesis.sectors.length === 0 && thesis.stages.length === 0 && thesis.minMomentum === 0 && thesis.minExits === 0 && thesis.minROI === 0) {
+      return { percentage: 80, reasons: ['No filters applied'] };
+    }
+
+    // Calculate percentage based on momentum/founder criteria only
+    const percentage = totalCriteria > 0 ? Math.round((matches / totalCriteria) * 100) : 80;
 
     return { percentage, reasons: reasons.slice(0, 3) };
   };
