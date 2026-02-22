@@ -1,3 +1,17 @@
+-- Primary trends table for persistent storage
+CREATE TABLE IF NOT EXISTS trends (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  category VARCHAR(100),
+  momentum_score INTEGER DEFAULT 0,
+  confidence INTEGER DEFAULT 0,
+  lifecycle VARCHAR(50),
+  mention_count INTEGER DEFAULT 0,
+  sources TEXT[],
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
 -- Trend snapshots for historical tracking
 CREATE TABLE IF NOT EXISTS trend_snapshots (
   id SERIAL PRIMARY KEY,
@@ -91,6 +105,9 @@ CREATE TABLE IF NOT EXISTS api_usage_log (
 );
 
 -- Create indexes for performance
+CREATE INDEX IF NOT EXISTS idx_trends_name ON trends(name);
+CREATE INDEX IF NOT EXISTS idx_trends_category ON trends(category);
+CREATE INDEX IF NOT EXISTS idx_trends_momentum ON trends(momentum_score);
 CREATE INDEX IF NOT EXISTS idx_trend_snapshots_date ON trend_snapshots(snapshot_date);
 CREATE INDEX IF NOT EXISTS idx_trend_snapshots_name ON trend_snapshots(trend_name);
 CREATE INDEX IF NOT EXISTS idx_watchlist_trend_id ON watchlist(trend_id);

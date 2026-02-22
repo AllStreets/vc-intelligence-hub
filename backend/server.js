@@ -14,6 +14,10 @@ import { YCScraperPlugin } from './plugins/ycScraperPlugin.js';
 import { SECEdgarPlugin } from './plugins/secEdgarPlugin.js';
 import { AngelListPlugin } from './plugins/angellistPlugin.js';
 import { TwitterPlugin } from './plugins/twitterPlugin.js';
+import { GoogleTrendsPlugin } from './plugins/googleTrendsPlugin.js';
+import { LinkedInPlugin } from './plugins/linkedinPlugin.js';
+import { BloombergPlugin } from './plugins/bloombergPlugin.js';
+import { RedditPlugin } from './plugins/redditPlugin.js';
 import { logger } from './utils/logger.js';
 import * as snapshotService from './services/snapshotService.js';
 import * as watchlistService from './services/watchlistService.js';
@@ -43,6 +47,12 @@ pluginManager.registerPlugin('sec_edgar', new SECEdgarPlugin());
 // Register future plugins (will activate when API keys available)
 pluginManager.registerPlugin('angellist', new AngelListPlugin());
 pluginManager.registerPlugin('twitter', new TwitterPlugin());
+
+// Register beta/future data sources (disabled by default, activate when ready)
+pluginManager.registerPlugin('google_trends', new GoogleTrendsPlugin());
+pluginManager.registerPlugin('linkedin', new LinkedInPlugin());
+pluginManager.registerPlugin('bloomberg', new BloombergPlugin());
+pluginManager.registerPlugin('reddit', new RedditPlugin());
 
 const pluginService = new PluginService(pluginManager);
 const trendScoringService = new TrendScoringService();
