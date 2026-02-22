@@ -114,3 +114,29 @@ h3 {
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-gray-600;
 }
+
+@keyframes momentum-bounce {
+  0% {
+    transform: translateY(0px);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+@keyframes momentum-up {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(15deg);
+  }
+}
+
+.animate-momentum {
+  animation: momentum-bounce 2s ease-in-out infinite;
+}

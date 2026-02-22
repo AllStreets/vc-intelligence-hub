@@ -1,3 +1,5 @@
+import { MomentumIndicator } from './MomentumIndicator';
+
 const trendColors = {
   'ai-ml': 'from-indigo-600 to-indigo-700',
   'fintech': 'from-pink-600 to-pink-700',
@@ -66,6 +68,11 @@ export default function TrendsFeed({ trends, selectedTrend, onSelectTrend }) {
               Confidence: <span className="text-gray-300 font-semibold">{trend.confidence}</span>
             </div>
           )}
+
+          <div className="flex justify-between items-center mt-3">
+            <span className="text-sm text-slate-400">Score: {trend.score}/100</span>
+            <MomentumIndicator momentum={trend.momentum} change={trend.momentumChange} />
+          </div>
         </button>
       ))}
 
