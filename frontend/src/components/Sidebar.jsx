@@ -9,13 +9,14 @@ import {
 } from '@heroicons/react/24/outline';
 import { fetchTrendsWithCache, fetchDealsWithCache } from '../services/dataCache';
 
-const pages = [
+const mainPages = [
   { id: 'discover', label: 'DISCOVER', icon: MagnifyingGlassIcon, color: 'slate-300' },
-  { id: 'evaluate', label: 'EVALUATE', icon: UserGroupIcon, color: 'red-600' },
-  { id: 'decide', label: 'DECIDE', icon: CurrencyDollarIcon, color: 'amber-400' },
   { id: 'track', label: 'TRACK', icon: ChartBarIcon, color: 'emerald-500' },
-  { id: 'settings', label: 'SETTINGS', icon: Cog6ToothIcon, color: 'slate-400' }
+  { id: 'evaluate', label: 'EVALUATE', icon: UserGroupIcon, color: 'red-600' },
+  { id: 'decide', label: 'DECIDE', icon: CurrencyDollarIcon, color: 'amber-400' }
 ];
+
+const settingsPage = { id: 'settings', label: 'SETTINGS', icon: Cog6ToothIcon, color: 'slate-400' };
 
 export function Sidebar() {
   const { activePage, setActivePage } = usePageContext();
@@ -65,7 +66,7 @@ export function Sidebar() {
 
       {/* Navigation Links */}
       <nav className="space-y-2 flex-1">
-        {pages.map(page => {
+        {mainPages.map(page => {
           const Icon = page.icon;
           const isActive = activePage === page.id;
 
@@ -85,6 +86,28 @@ export function Sidebar() {
           );
         })}
       </nav>
+
+      {/* Settings Link at Bottom */}
+      <div className="space-y-2">
+        {(() => {
+          const Icon = settingsPage.icon;
+          const isActive = activePage === settingsPage.id;
+
+          return (
+            <button
+              onClick={() => setActivePage(settingsPage.id)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all border-t border-dark-700 pt-4 ${
+                isActive
+                  ? `bg-dark-700 text-${settingsPage.color} border-l-4 border-${settingsPage.color}`
+                  : 'text-slate-400 hover:text-white hover:bg-dark-700'
+              }`}
+            >
+              <Icon className="w-5 h-5" />
+              <span className="text-sm font-semibold">{settingsPage.label}</span>
+            </button>
+          );
+        })()}
+      </div>
 
       {/* Footer Info */}
       <div className="text-xs text-slate-500 border-t border-dark-700 pt-4">

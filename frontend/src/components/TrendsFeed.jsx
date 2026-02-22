@@ -2,6 +2,8 @@ import { MomentumIndicator } from './MomentumIndicator';
 import { SearchFilter } from './SearchFilter';
 import { FounderDetailsPanel } from './FounderDetailsPanel';
 import { SourceLinks } from './SourceLinks';
+import { BookmarkIcon } from '@heroicons/react/24/outline';
+import { BookmarkIcon as BookmarkSolidIcon } from '@heroicons/react/24/solid';
 import { useState, useEffect } from 'react';
 
 // Map frontend category display names to backend category values
@@ -44,9 +46,11 @@ export default function TrendsFeed({ trends, selectedTrend, onSelectTrend, onSea
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedFounder, setSelectedFounder] = useState(null);
+  const [watchlist, setWatchlist] = useState([]);
 
   useEffect(() => {
     fetchTrends();
+    loadWatchlist();
   }, []);
 
   // Sync trends prop with internal state whenever it changes
@@ -57,6 +61,30 @@ export default function TrendsFeed({ trends, selectedTrend, onSelectTrend, onSea
       setLoading(false);
     }
   }, [trends]);
+
+  const loadWatchlist = () => {
+    try {
+      const saved = localStorage.getItem('vc-watchlist');
+      if (saved) {
+        setWatchlist(JSON.parse(saved));
+      }
+    } catch (err) {
+      console.error('Error loading watchlist:', err);
+    }
+  };
+
+  const toggleWatchlist = (trendId) => {
+    const newWatchlist = watchlist.includes(trendId)
+      ? watchlist.filter(id => id !== trendId)
+      : [...watchlist, trendId];
+
+    setWatchlist(newWatchlist);
+    try {
+      localStorage.setItem('vc-watchlist', JSON.stringify(newWatchlist));
+    } catch (err) {
+      console.error('Error saving watchlist:', err);
+    }
+  };
 
   const fetchTrends = async () => {
     try {
@@ -143,7 +171,21 @@ export default function TrendsFeed({ trends, selectedTrend, onSelectTrend, onSea
                   <h3 className="font-display font-bold text-lg truncate">{trend.name}</h3>
                   <p className="text-sm text-gray-400 mt-1 capitalize">{trend.category?.replace('-', ' ')}</p>
                 </div>
-                <div className="text-right flex-shrink-0">
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleWatchlist(trend.id);
+                    }}
+                    className="p-2 rounded-lg hover:bg-dark-600 transition-colors group"
+                    title={watchlist.includes(trend.id) ? 'Remove from Watchlist' : 'Add to Watchlist'}
+                  >
+                    {watchlist.includes(trend.id) ? (
+                      <BookmarkSolidIcon className="w-6 h-6 text-amber-400" />
+                    ) : (
+                      <BookmarkIcon className="w-6 h-6 text-slate-400 group-hover:text-amber-400 transition-colors" />
+                    )}
+                  </button>
                   <div className={`w-16 h-16 rounded-lg bg-gradient-to-br ${trendColors[trend.category] || trendColors['other']} flex items-center justify-center font-bold text-lg`}>
                     {trend.momentum_score}
                   </div>
