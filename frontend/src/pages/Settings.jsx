@@ -3,9 +3,7 @@ import { Cog6ToothIcon } from '@heroicons/react/24/outline';
 
 export function Settings() {
   const [preferences, setPreferences] = useState({
-    theme: 'dark',
-    defaultMomentumThreshold: 50,
-    notificationsEnabled: true
+    defaultMomentumThreshold: 50
   });
   const [systemInfo, setSystemInfo] = useState({});
   const [savedSearches, setSavedSearches] = useState([]);
@@ -92,23 +90,10 @@ export function Settings() {
       <div className="space-y-6">
         <section className="bg-dark-700 rounded-lg border border-dark-600 p-6">
           <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-            <Cog6ToothIcon className="w-5 h-5" /> Display Preferences
+            <Cog6ToothIcon className="w-5 h-5" /> Preferences
           </h2>
 
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-semibold text-slate-300 mb-2">Theme</label>
-              <select
-                value={preferences.theme}
-                onChange={(e) => updatePreferences({ ...preferences, theme: e.target.value })}
-                className="w-full bg-dark-600 text-slate-300 px-4 py-2 rounded border border-dark-500"
-              >
-                <option value="dark">Dark Mode</option>
-                <option value="light">Light Mode</option>
-                <option value="auto">Auto</option>
-              </select>
-            </div>
-
             <div>
               <label className="block text-sm font-semibold text-slate-300 mb-2">
                 Default Momentum Threshold: {preferences.defaultMomentumThreshold}
@@ -122,16 +107,6 @@ export function Settings() {
                 className="w-full"
               />
             </div>
-
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={preferences.notificationsEnabled}
-                onChange={(e) => updatePreferences({ ...preferences, notificationsEnabled: e.target.checked })}
-                className="w-4 h-4"
-              />
-              <span className="text-sm text-slate-300">Enable notifications</span>
-            </label>
           </div>
         </section>
 
