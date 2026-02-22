@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Cog6ToothIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
-import { fetchTrendsWithCache, fetchDealsWithCache } from '../services/dataCache';
+import { fetchTrendsWithCache, fetchDealsWithCache, fetchAPIStatusWithCache } from '../services/dataCache';
 
 export function Settings() {
   const [preferences, setPreferences] = useState({
@@ -61,6 +61,7 @@ export function Settings() {
       // Get data from cache to display system info
       const trendsData = await fetchTrendsWithCache();
       const dealsData = await fetchDealsWithCache();
+      const apiStatusData = await fetchAPIStatusWithCache();
 
       const trendCount = (trendsData.trends || []).length;
       const dealCount = (dealsData.deals || []).length;
@@ -75,11 +76,14 @@ export function Settings() {
         }
       });
 
+      // Count active data sources from API status
+      const activeSourcesCount = apiStatusData.activePlugins?.length || 0;
+
       setSystemInfo({
         trendsLoaded: trendCount,
         dealsLoaded: dealCount,
         foundersLoaded: founderSet.size,
-        dataSourcesActive: 6,
+        dataSourcesActive: activeSourcesCount,
         databaseStatus: 'Connected',
         lastUpdated: new Date().toISOString()
       });

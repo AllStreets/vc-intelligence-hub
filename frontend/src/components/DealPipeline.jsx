@@ -221,21 +221,19 @@ const DealPipeline = memo(function DealPipeline() {
                           <p className="text-xs text-amber-400 mt-1">👤 {deal.founders[0].name}</p>
                         )}
                       </div>
-                      {deal.id.toString().length === 13 && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const updatedPipeline = { ...pipeline };
-                            updatedPipeline[stage.id] = updatedPipeline[stage.id].filter(d => d.id !== deal.id);
-                            setPipeline(updatedPipeline);
-                            savePipelineToStorage(updatedPipeline);
-                          }}
-                          className="ml-2 p-1 text-slate-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                          title="Delete deal"
-                        >
-                          <TrashIcon className="w-4 h-4" />
-                        </button>
-                      )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const updatedPipeline = { ...pipeline };
+                          updatedPipeline[stage.id] = updatedPipeline[stage.id].filter(d => d.id !== deal.id);
+                          setPipeline(updatedPipeline);
+                          savePipelineToStorage(updatedPipeline);
+                        }}
+                        className="ml-2 p-1 text-slate-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Delete deal"
+                      >
+                        <TrashIcon className="w-4 h-4" />
+                      </button>
                     </div>
                   ))}
                 </div>
