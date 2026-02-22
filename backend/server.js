@@ -122,8 +122,9 @@ function generateMockFounders(trend) {
   const titles = ['CEO', 'CTO', 'Co-Founder', 'Engineering Lead', 'Product Lead', 'Founder', 'Chief Product Officer', 'VP Engineering'];
   const companies = ['Google', 'Facebook', 'Amazon', 'Microsoft', 'Apple', 'Tesla', 'Stripe', 'Airbnb', 'Uber', 'Slack', 'Notion', 'Figma'];
 
-  // Create deterministic but varied seed
-  const seed = trend.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+  // Create deterministic but varied seed (convert id to string if it's a number)
+  const idString = String(trend.id);
+  const seed = idString.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
 
   // Generate founders for 40% of trends
   if ((seed % 10) < 6) return [];
