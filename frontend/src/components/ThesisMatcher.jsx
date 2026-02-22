@@ -1,4 +1,5 @@
 import { useState, useMemo, memo, useEffect } from 'react';
+import { parseThesis } from '../utils/thesisParser';
 
 // Map backend category values to frontend display names
 const backendToFrontendCategory = {
@@ -13,6 +14,29 @@ const backendToFrontendCategory = {
   'biotech': 'Biotech',
   'enterprise': 'Enterprise'
 };
+
+// Type detection helpers
+const OpportunityType = {
+  TREND: 'trend',
+  DEAL: 'deal'
+};
+
+const getOpportunityType = (item) => {
+  if (item.momentum_score !== undefined) return OpportunityType.TREND;
+  if (item.funding_type !== undefined) return OpportunityType.DEAL;
+  return OpportunityType.TREND;
+};
+
+const getOpportunityName = (item) => item.company_name || item.name;
+
+const getOpportunitySector = (item) => {
+  const category = item.category;
+  return backendToFrontendCategory[category] || category;
+};
+
+const hasStageInfo = (item) => !!item.funding_type;
+
+const hasMomentumInfo = (item) => item.momentum_score !== undefined;
 
 const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
   const [thesis, setThesis] = useState({
@@ -92,44 +116,63 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
   // Score trends/deals against thesis
   const scoreOpportunity = (item) => {
     const reasons = [];
+    const oppType = getOpportunityType(item);
+    const parsedThesis = thesisText.trim()
+      ? parseThesis(thesisText)
+      : { sectors: [], stages: [], keywords: [], confidence: 0 };
 
-    // If sectors are selected, item must match at least one
-    if (thesis.sectors.length > 0) {
-      const itemSector = backendToFrontendCategory[item.category] || item.category;
-      if (!thesis.sectors.includes(itemSector)) {
-        return { percentage: 0, reasons: [] }; // Filter out non-matching sectors
+    // Merge UI selections with parsed thesis
+    const activeSectors = thesis.sectors.length > 0
+      ? thesis.sectors
+      : parsedThesis.sectors;
+    const activeStages = thesis.stages.length > 0
+      ? thesis.stages
+      : parsedThesis.stages;
+
+    // HARD FILTER: Sectors (applies to BOTH)
+    if (activeSectors.length > 0) {
+      const itemSector = getOpportunitySector(item);
+      if (!activeSectors.includes(itemSector)) {
+        return { percentage: 0, reasons: [], oppType };
       }
       reasons.push(`✓ ${itemSector}`);
     }
 
-    // If stages are selected, item must match at least one
-    if (thesis.stages.length > 0) {
-      if (!item.funding_type) {
-        return { percentage: 0, reasons: [] }; // Filter out items without funding stage info
+    // HARD FILTER: Stages (ONLY for deals)
+    if (activeStages.length > 0) {
+      if (oppType === OpportunityType.DEAL) {
+        if (!hasStageInfo(item)) {
+          return { percentage: 0, reasons: [], oppType };
+        }
+        const stageMatch = activeStages.some(stage =>
+          item.funding_type?.includes(stage)
+        );
+        if (!stageMatch) {
+          return { percentage: 0, reasons: [], oppType };
+        }
+        reasons.push(`✓ ${item.funding_type}`);
       }
-      const stageMatch = thesis.stages.some(stage => item.funding_type?.includes(stage));
-      if (!stageMatch) {
-        return { percentage: 0, reasons: [] }; // Filter out non-matching stages
-      }
-      reasons.push(`✓ ${item.funding_type}`);
+      // Trends: Skip stage filter entirely
     }
 
-    // Check momentum threshold
+    // SOFT SCORING: Momentum (ONLY for trends)
     let matches = 0;
     let totalCriteria = 0;
 
-    if (thesis.minMomentum > 0) {
-      totalCriteria++;
-      const momentum = Math.min(100, item.momentum_score * 2);
-      if (momentum >= thesis.minMomentum) {
-        matches++;
-        reasons.push(`✓ Momentum: ${momentum.toFixed(0)}`);
-      } else {
-        reasons.push(`✗ Momentum: ${momentum.toFixed(0)}`);
+    if (thesis.minMomentum > 0 && oppType === OpportunityType.TREND) {
+      if (hasMomentumInfo(item)) {
+        totalCriteria++;
+        const momentum = Math.min(100, item.momentum_score * 2);
+        if (momentum >= thesis.minMomentum) {
+          matches++;
+          reasons.push(`✓ Momentum: ${momentum.toFixed(0)}`);
+        } else {
+          reasons.push(`✗ Momentum: ${momentum.toFixed(0)}`);
+        }
       }
     }
 
-    // Check founder quality
+    // SOFT SCORING: Founder quality (for trends)
     if ((thesis.minExits > 0 || thesis.minROI > 0) && item.founders?.length > 0) {
       const topFounder = item.founders[0];
       if (topFounder.investmentTrack) {
@@ -150,15 +193,35 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
       }
     }
 
-    // If no criteria set, show all items with high score
-    if (thesis.sectors.length === 0 && thesis.stages.length === 0 && thesis.minMomentum === 0 && thesis.minExits === 0 && thesis.minROI === 0) {
-      return { percentage: 80, reasons: ['No filters applied'] };
+    // SOFT SCORING: Keyword matching
+    if (parsedThesis.keywords.length > 0) {
+      totalCriteria++;
+      const itemText = (getOpportunityName(item) + ' ' +
+                       (item.data?.description || '') + ' ' +
+                       (item.data?.title || '')).toLowerCase();
+
+      const keywordMatches = parsedThesis.keywords.filter(kw =>
+        itemText.includes(kw.toLowerCase())
+      );
+
+      if (keywordMatches.length > 0) {
+        matches++;
+        reasons.push(`✓ Keywords: ${keywordMatches.slice(0, 2).join(', ')}`);
+      }
     }
 
-    // Calculate percentage based on momentum/founder criteria only
-    const percentage = totalCriteria > 0 ? Math.round((matches / totalCriteria) * 100) : 80;
+    // Handle no-criteria case
+    if (activeSectors.length === 0 && activeStages.length === 0 &&
+        thesis.minMomentum === 0 && thesis.minExits === 0 && thesis.minROI === 0) {
+      return { percentage: 80, reasons: ['No filters applied'], oppType };
+    }
 
-    return { percentage, reasons: reasons.slice(0, 3) };
+    // Calculate percentage
+    const percentage = totalCriteria > 0
+      ? Math.round((matches / totalCriteria) * 100)
+      : (reasons.length > 0 ? 80 : 0);
+
+    return { percentage, reasons: reasons.slice(0, 3), oppType };
   };
 
   // Update results when thesis or data changes
@@ -220,6 +283,35 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
             className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded text-white placeholder-slate-400 focus:outline-none focus:border-amber-500 text-sm h-24 resize-none"
           />
           <p className="text-xs text-slate-500 mt-2">This will be saved automatically</p>
+          {thesisText.trim() && (() => {
+            const parsed = parseThesis(thesisText);
+            return parsed.confidence > 0 && (
+              <div className="mt-3 p-3 bg-dark-600 rounded border border-dark-500">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-slate-400">
+                    AI Understanding: {parsed.confidence}%
+                  </span>
+                  <div className="w-32 h-1.5 bg-dark-500 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-amber-500 transition-all duration-300"
+                      style={{ width: `${parsed.confidence}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="text-xs text-slate-500 space-y-1">
+                  {parsed.sectors.length > 0 && (
+                    <div>Detected sectors: {parsed.sectors.join(', ')}</div>
+                  )}
+                  {parsed.stages.length > 0 && (
+                    <div>Detected stages: {parsed.stages.join(', ')}</div>
+                  )}
+                  {parsed.keywords.length > 0 && (
+                    <div>Key terms: {parsed.keywords.slice(0, 5).join(', ')}</div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
           </div>
         </div>
 
@@ -322,7 +414,16 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
               className={`p-3 rounded flex justify-between items-center cursor-pointer transition-transform hover:scale-105 ${getMatchColor(item.match.percentage)}`}
             >
               <div className="flex-1 min-w-0">
-                <p className="font-semibold truncate">{item.company_name || item.name}</p>
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="font-semibold truncate">{getOpportunityName(item)}</p>
+                  <span className={`text-xs px-2 py-0.5 rounded ${
+                    item.match.oppType === OpportunityType.DEAL
+                      ? 'bg-blue-900 text-blue-200'
+                      : 'bg-purple-900 text-purple-200'
+                  }`}>
+                    {item.match.oppType === OpportunityType.DEAL ? 'DEAL' : 'TREND'}
+                  </span>
+                </div>
                 <p className="text-xs opacity-80 line-clamp-2">{item.match.reasons.join(' • ')}</p>
               </div>
               <div className="text-right flex-shrink-0 ml-2">
