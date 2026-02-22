@@ -1,5 +1,19 @@
 import { useState, useMemo, memo, useEffect } from 'react';
 
+// Map backend category values to frontend display names
+const backendToFrontendCategory = {
+  'ai-ml': 'AI/ML',
+  'fintech': 'Fintech',
+  'climate': 'Climate',
+  'healthcare': 'Healthcare',
+  'cybersecurity': 'Cybersecurity',
+  'web3-crypto': 'Web3',
+  'saas': 'SaaS',
+  'edtech': 'EdTech',
+  'biotech': 'Biotech',
+  'enterprise': 'Enterprise'
+};
+
 const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
   const [thesis, setThesis] = useState({
     sectors: [],
@@ -63,7 +77,7 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
 
     // If sectors are selected, item must match at least one
     if (thesis.sectors.length > 0) {
-      const itemSector = item.category?.replace('-', ' ') || item.funding_type;
+      const itemSector = backendToFrontendCategory[item.category] || item.category;
       if (!thesis.sectors.includes(itemSector)) {
         return { percentage: 0, reasons: [] }; // Filter out non-matching sectors
       }
