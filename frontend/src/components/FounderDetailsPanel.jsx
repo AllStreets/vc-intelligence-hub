@@ -107,12 +107,12 @@ export function FounderDetailsPanel({ founderId, onClose }) {
           </div>
 
           {/* Investment track record */}
-          {founder.investmentTrackRecord && (
+          {founder.investmentTrack && (
             <div>
               <h3 className="text-sm font-semibold text-slate-300 mb-2">Investment Track Record</h3>
               <ul className="space-y-1 text-sm text-slate-300">
-                <li>• {founder.investmentTrackRecord.exits} successful exits</li>
-                <li>• ${founder.investmentTrackRecord.distributions}M in distributions</li>
+                <li>• {founder.investmentTrack.exits} successful exits</li>
+                <li>• {founder.investmentTrack.averageROI}% average ROI</li>
               </ul>
             </div>
           )}

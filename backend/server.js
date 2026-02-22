@@ -325,16 +325,27 @@ app.delete('/api/watchlist/:trendId', async (req, res) => {
 app.get('/api/founders/:founderId', async (req, res) => {
   try {
     const { founderId } = req.params;
-    // Fetch from plugins or cache
-    const founders = await pluginManager.fetchFounders();
-    const founder = founders.find(f => f.id === founderId);
 
-    if (!founder) {
-      return res.status(404).json({ error: 'Founder not found' });
+    // Collect all trends to search for founder
+    const { trends } = await pluginService.collectTrends();
+    const deduplicated = trendScoringService.deduplicateTrends(trends);
+    const scored = trendScoringService.scoreTrends(deduplicated);
+    const enriched = enrichTrendsWithSources(scored);
+    const withFounders = enrichTrendsWithFounders(enriched);
+
+    // Search through all trends for the founder
+    for (const trend of withFounders) {
+      if (trend.founders && trend.founders.length > 0) {
+        const founder = trend.founders.find(f => f.id === founderId);
+        if (founder) {
+          return res.json(founder);
+        }
+      }
     }
 
-    res.json(founder);
+    res.status(404).json({ error: 'Founder not found' });
   } catch (error) {
+    logger.error('Error in /api/founders/:founderId', { error: error.message });
     res.status(500).json({ error: error.message });
   }
 });
