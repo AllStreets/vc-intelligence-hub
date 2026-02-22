@@ -15,6 +15,7 @@ import { SECEdgarPlugin } from './plugins/secEdgarPlugin.js';
 import { AngelListPlugin } from './plugins/angellistPlugin.js';
 import { TwitterPlugin } from './plugins/twitterPlugin.js';
 import { logger } from './utils/logger.js';
+import * as snapshotService from './services/snapshotService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -131,6 +132,31 @@ app.get('/api/founders', async (req, res) => {
 });
 
 // ============================================
+// HISTORICAL ENDPOINTS
+// ============================================
+
+app.get('/api/historical/:trendName', async (req, res) => {
+  try {
+    const { trendName } = req.params;
+    const days = req.query.days || 30;
+    const history = await snapshotService.getTrendHistory(trendName, parseInt(days));
+    res.json(history);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/historical/stats/:trendName', async (req, res) => {
+  try {
+    const { trendName } = req.params;
+    const stats = await snapshotService.getTrendStats(trendName);
+    res.json(stats);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
 // ERROR HANDLING
 // ============================================
 
@@ -138,6 +164,39 @@ app.use((err, req, res, next) => {
   logger.error('Unhandled error', { error: err.message });
   res.status(500).json({ error: 'Internal server error' });
 });
+
+// ============================================
+// DAILY SNAPSHOT SCHEDULER
+// ============================================
+
+// Schedule daily snapshots at 00:00 UTC
+function scheduleDailySnapshots() {
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setUTCHours(24, 0, 0, 0);
+
+  const timeUntilMidnight = tomorrow - now;
+
+  setTimeout(() => {
+    // Run immediately at midnight
+    runDailySnapshot();
+    // Then run every 24 hours
+    setInterval(runDailySnapshot, 24 * 60 * 60 * 1000);
+  }, timeUntilMidnight);
+}
+
+async function runDailySnapshot() {
+  try {
+    logger.info('Running daily snapshot job');
+    const trends = await pluginManager.fetchTrends();
+    await snapshotService.saveDailySnapshots(trends);
+  } catch (error) {
+    logger.error('Daily snapshot job failed:', error);
+  }
+}
+
+// Start scheduler on server startup
+scheduleDailySnapshots();
 
 // ============================================
 // SERVER START
