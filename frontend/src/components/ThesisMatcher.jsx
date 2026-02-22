@@ -84,8 +84,11 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
       reasons.push(`✓ ${itemSector}`);
     }
 
-    // If stages are selected, item must match at least one (only for items that have funding_type)
-    if (thesis.stages.length > 0 && item.funding_type) {
+    // If stages are selected, item must match at least one
+    if (thesis.stages.length > 0) {
+      if (!item.funding_type) {
+        return { percentage: 0, reasons: [] }; // Filter out items without funding stage info
+      }
       const stageMatch = thesis.stages.some(stage => item.funding_type?.includes(stage));
       if (!stageMatch) {
         return { percentage: 0, reasons: [] }; // Filter out non-matching stages
