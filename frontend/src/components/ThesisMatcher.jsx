@@ -166,9 +166,10 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
         </div>
 
         {/* Thesis Statement */}
-        <div className="mb-6 border border-dark-500 rounded-lg p-4">
+        <div className="mb-6">
           <label className="block text-sm font-semibold text-slate-300 mb-3">Your Investment Thesis</label>
-          <textarea
+          <div className="border border-dark-500 rounded-lg p-4">
+<textarea
             value={thesisText}
             onChange={(e) => {
               setThesisText(e.target.value);
@@ -178,6 +179,7 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
             className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded text-white placeholder-slate-400 focus:outline-none focus:border-amber-500 text-sm h-24 resize-none"
           />
           <p className="text-xs text-slate-500 mt-2">This will be saved automatically</p>
+          </div>
         </div>
 
         {/* Sectors */}

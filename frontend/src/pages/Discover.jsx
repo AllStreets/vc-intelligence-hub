@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { ChevronDownIcon } from '@heroicons/react/24/outline'
 import TrendsFeed from '../components/TrendsFeed'
 import TrendDrilldown from '../components/TrendDrilldown'
 import DealDiscovery from '../components/DealDiscovery'
@@ -17,7 +16,6 @@ export function Discover() {
   const [activeTab, setActiveTab] = useState('trends')
   const [searchHistory, setSearchHistory] = useState([])
   const [dealSearchHistory, setDealSearchHistory] = useState([])
-  const [showHistory, setShowHistory] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
 
   useEffect(() => {
@@ -282,52 +280,6 @@ export function Discover() {
           >
             Plugin Status
           </button>
-
-          {/* Search History Dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setShowHistory(!showHistory)}
-              className="btn btn-ghost flex items-center gap-2"
-              title="View recent searches"
-            >
-              Search History {searchHistory.length > 0 && `(${searchHistory.length})`}
-              <ChevronDownIcon className={`w-4 h-4 transition-transform ${showHistory ? 'rotate-180' : ''}`} />
-            </button>
-
-            {showHistory && (
-              <div className="absolute top-full left-0 mt-2 bg-dark-700 border border-dark-600 rounded-lg shadow-lg z-50 min-w-64 max-h-96 overflow-y-auto">
-                {searchHistory.length === 0 ? (
-                  <div className="p-4 text-slate-400 text-sm">No search history yet</div>
-                ) : (
-                  <>
-                    <div className="sticky top-0 bg-dark-700 border-b border-dark-600 p-3 flex justify-between items-center">
-                      <span className="text-sm font-semibold text-slate-300">Recent Searches</span>
-                      <button
-                        onClick={clearSearchHistory}
-                        className="text-xs text-red-400 hover:text-red-300 transition-colors"
-                      >
-                        Clear
-                      </button>
-                    </div>
-                    {searchHistory.map((entry) => (
-                      <div
-                        key={entry.id}
-                        className="px-4 py-3 border-b border-dark-600 hover:bg-dark-600 transition-colors cursor-pointer text-sm"
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="text-slate-300 font-medium">{entry.type}</p>
-                            <p className="text-xs text-slate-500">{entry.count} items loaded</p>
-                          </div>
-                          <p className="text-xs text-slate-500">{entry.displayTime}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </>
-                )}
-              </div>
-            )}
-          </div>
         </div>
 
         {error && (
