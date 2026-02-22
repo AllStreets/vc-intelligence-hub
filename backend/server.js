@@ -17,6 +17,7 @@ import { TwitterPlugin } from './plugins/twitterPlugin.js';
 import { logger } from './utils/logger.js';
 import * as snapshotService from './services/snapshotService.js';
 import * as watchlistService from './services/watchlistService.js';
+import * as userPreferencesService from './services/userPreferencesService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -196,6 +197,28 @@ app.delete('/api/watchlist/:trendId', async (req, res) => {
     const { trendId } = req.params;
     const result = await watchlistService.removeFromWatchlist(trendId);
     res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// USER PREFERENCES ENDPOINTS
+// ============================================
+
+app.get('/api/user/preferences', async (req, res) => {
+  try {
+    const prefs = await userPreferencesService.getPreferences();
+    res.json(prefs);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/user/preferences', async (req, res) => {
+  try {
+    const prefs = await userPreferencesService.updatePreferences(req.body);
+    res.json(prefs);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
