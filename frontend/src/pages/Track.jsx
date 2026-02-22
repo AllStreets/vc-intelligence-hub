@@ -92,7 +92,8 @@ export function Track() {
         {/* Historical Trend Chart */}
         <div className="bg-dark-700 rounded-lg border border-dark-600 p-6">
           <h2 className="text-lg font-bold text-white mb-4">Trend Momentum Over Time</h2>
-          <TrendHistoryChart />
+          <p className="text-sm text-slate-400 mb-4">Click on a trend name to add it to the chart</p>
+          <TrendHistoryChart trends={trends} />
         </div>
 
         {/* Sector Distribution Chart */}

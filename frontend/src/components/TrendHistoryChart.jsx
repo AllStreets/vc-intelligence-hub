@@ -1,35 +1,31 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useState, useEffect, memo } from 'react';
 
-const TrendHistoryChart = memo(function TrendHistoryChart() {
+const TrendHistoryChart = memo(function TrendHistoryChart({ trends = [] }) {
   const [data, setData] = useState([]);
   const [selectedTrends, setSelectedTrends] = useState([]);
-  const [allTrends, setAllTrends] = useState([]);
+  const [displayTrends, setDisplayTrends] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const colors = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
+
   useEffect(() => {
-    fetchHistoricalData();
-  }, []);
+    if (trends.length > 0) {
+      // Get top 15 trends for display
+      const topTrends = trends.slice(0, 15);
+      setDisplayTrends(topTrends);
 
-  const fetchHistoricalData = async () => {
-    try {
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-      // Fetch available trends for selection
-      const response = await fetch(`${baseUrl}/api/trends/scored`);
-      const data = await response.json();
-      setAllTrends((data.trends || []).slice(0, 20)); // Top 20 for selection
+      // Auto-select first 3 trends
+      setSelectedTrends(topTrends.slice(0, 3).map(t => t.id));
 
-      // For demo: create mock historical data (30 days)
-      const mockData = generateMockHistoricalData();
+      // Generate mock historical data with actual trend names
+      const mockData = generateMockHistoricalData(topTrends);
       setData(mockData);
-    } catch (error) {
-      console.error('Error fetching historical data:', error);
-    } finally {
       setLoading(false);
     }
-  };
+  }, [trends]);
 
-  const generateMockHistoricalData = () => {
+  const generateMockHistoricalData = (trendsToInclude) => {
     const data = [];
     const today = new Date();
 
@@ -37,43 +33,53 @@ const TrendHistoryChart = memo(function TrendHistoryChart() {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
 
-      data.push({
-        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        'AI/ML': 45 + Math.random() * 30 + i,
-        'Fintech': 40 + Math.random() * 25 + i * 0.5,
-        'Climate': 35 + Math.random() * 20
+      const dayData = {
+        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      };
+
+      // Add mock values for each trend
+      trendsToInclude.forEach((trend, idx) => {
+        const baseValue = 40 + idx * 5;
+        dayData[trend.id] = baseValue + Math.random() * 30 + i * 0.5;
       });
+
+      data.push(dayData);
     }
 
     return data;
   };
 
-  const colors = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6'];
+  const toggleTrendSelection = (trendId) => {
+    setSelectedTrends(prev =>
+      prev.includes(trendId)
+        ? prev.filter(t => t !== trendId)
+        : [...prev, trendId]
+    );
+  };
 
   if (loading) {
     return <p className="text-slate-400">Loading historical data...</p>;
   }
 
+  if (displayTrends.length === 0) {
+    return <p className="text-slate-400">No trends available to track</p>;
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex gap-2 flex-wrap mb-4">
-        {['AI/ML', 'Fintech', 'Climate'].map((trend, idx) => (
+      <div className="flex gap-2 flex-wrap mb-4 max-h-24 overflow-y-auto p-2 bg-dark-600 rounded">
+        {displayTrends.map((trend, idx) => (
           <button
-            key={trend}
-            onClick={() => {
-              setSelectedTrends(prev =>
-                prev.includes(trend)
-                  ? prev.filter(t => t !== trend)
-                  : [...prev, trend]
-              );
-            }}
-            className={`px-3 py-1 rounded text-sm ${
-              selectedTrends.includes(trend)
-                ? 'bg-green-600 text-white'
-                : 'bg-dark-600 text-slate-400'
+            key={trend.id}
+            onClick={() => toggleTrendSelection(trend.id)}
+            className={`px-3 py-1 rounded text-sm whitespace-nowrap transition-colors ${
+              selectedTrends.includes(trend.id)
+                ? 'bg-emerald-600 text-white'
+                : 'bg-dark-700 text-slate-400 hover:bg-dark-600'
             }`}
+            title={trend.name}
           >
-            {trend}
+            {trend.name.substring(0, 20)}...
           </button>
         ))}
       </div>
@@ -88,19 +94,28 @@ const TrendHistoryChart = memo(function TrendHistoryChart() {
             labelStyle={{ color: '#FFF' }}
           />
           <Legend />
-          {['AI/ML', 'Fintech', 'Climate'].map((trend, idx) => (
-            <Line
-              key={trend}
-              type="monotone"
-              dataKey={trend}
-              stroke={colors[idx]}
-              dot={false}
-              strokeWidth={2}
-              isAnimationActive={false}
-            />
-          ))}
+          {displayTrends.map((trend, idx) =>
+            selectedTrends.includes(trend.id) ? (
+              <Line
+                key={trend.id}
+                type="monotone"
+                dataKey={trend.id}
+                stroke={colors[idx % colors.length]}
+                dot={false}
+                strokeWidth={2}
+                isAnimationActive={false}
+                name={trend.name}
+              />
+            ) : null
+          )}
         </LineChart>
       </ResponsiveContainer>
+
+      <div className="text-xs text-slate-500 mt-2">
+        {selectedTrends.length === 0 && (
+          <p>Click on a trend above to add it to the chart</p>
+        )}
+      </div>
     </div>
   );
 });

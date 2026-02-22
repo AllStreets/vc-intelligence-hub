@@ -121,40 +121,44 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
         {/* Sectors */}
         <div className="mb-6">
           <label className="block text-sm font-semibold text-slate-300 mb-3">Target Sectors</label>
-          <div className="grid grid-cols-2 gap-2">
-            {allSectors.map(sector => (
-              <button
-                key={sector}
-                onClick={() => toggleSector(sector)}
-                className={`px-3 py-2 rounded text-sm transition-colors ${
-                  thesis.sectors.includes(sector)
-                    ? 'bg-amber-600 text-white'
-                    : 'bg-dark-600 text-slate-400 hover:bg-dark-500'
-                }`}
-              >
-                {sector}
-              </button>
-            ))}
+          <div className="border border-dark-500 rounded-lg p-4">
+            <div className="grid grid-cols-2 gap-2">
+              {allSectors.map(sector => (
+                <button
+                  key={sector}
+                  onClick={() => toggleSector(sector)}
+                  className={`px-3 py-2 rounded text-sm transition-colors ${
+                    thesis.sectors.includes(sector)
+                      ? 'bg-amber-600 text-white'
+                      : 'bg-dark-600 text-slate-400 hover:bg-dark-500'
+                  }`}
+                >
+                  {sector}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Stages */}
         <div className="mb-6">
           <label className="block text-sm font-semibold text-slate-300 mb-3">Funding Stages</label>
-          <div className="grid grid-cols-3 gap-2">
-            {allStages.map(stage => (
-              <button
-                key={stage}
-                onClick={() => toggleStage(stage)}
-                className={`px-3 py-2 rounded text-sm transition-colors ${
-                  thesis.stages.includes(stage)
-                    ? 'bg-amber-600 text-white'
-                    : 'bg-dark-600 text-slate-400 hover:bg-dark-500'
-                }`}
-              >
-                {stage}
-              </button>
-            ))}
+          <div className="border border-dark-500 rounded-lg p-4">
+            <div className="grid grid-cols-3 gap-2">
+              {allStages.map(stage => (
+                <button
+                  key={stage}
+                  onClick={() => toggleStage(stage)}
+                  className={`px-3 py-2 rounded text-sm transition-colors ${
+                    thesis.stages.includes(stage)
+                      ? 'bg-amber-600 text-white'
+                      : 'bg-dark-600 text-slate-400 hover:bg-dark-500'
+                  }`}
+                >
+                  {stage}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 

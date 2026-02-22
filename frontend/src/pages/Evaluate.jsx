@@ -17,7 +17,11 @@ export function Evaluate() {
     try {
       setLoading(true);
       setError(null);
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+      // Get the correct base URL for founder network (may differ from API base)
+      const baseUrl = import.meta.env.PROD
+        ? (import.meta.env.VITE_API_URL || 'https://api.example.com')
+        : 'http://localhost:5000';
 
       // Fetch founder network data
       const networkResponse = await fetch(`${baseUrl}/api/founder-network`);

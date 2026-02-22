@@ -6,6 +6,20 @@ export function SectorHeatmap({ trends }) {
   const sectors = ['AI/ML', 'Fintech', 'Climate', 'Healthcare', 'Cybersecurity', 'Web3', 'SaaS', 'EdTech', 'Biotech', 'Enterprise'];
   const momentumBuckets = ['0-10', '11-20', '21-30', '31-40', '41-50', '51-60', '61-70', '71-80', '81-90', '91-100'];
 
+  // Category mapping from backend format to display format
+  const categoryMapping = {
+    'ai-ml': 'AI/ML',
+    'fintech': 'Fintech',
+    'climate': 'Climate',
+    'healthcare': 'Healthcare',
+    'cybersecurity': 'Cybersecurity',
+    'web3-crypto': 'Web3',
+    'saas': 'SaaS',
+    'edtech': 'EdTech',
+    'biotech': 'Biotech',
+    'enterprise': 'Enterprise'
+  };
+
   // Build heatmap matrix
   const heatmapData = useMemo(() => {
     const matrix = {};
@@ -19,7 +33,8 @@ export function SectorHeatmap({ trends }) {
 
     // Map trends to matrix
     trends?.forEach(trend => {
-      const sector = trend.category?.replace('-', ' ') || 'Unknown';
+      const categoryKey = trend.category?.toLowerCase() || 'unknown';
+      const sector = categoryMapping[categoryKey] || 'Unknown';
       const momentum = Math.min(100, trend.momentum_score * 2);
 
       if (sectors.includes(sector)) {

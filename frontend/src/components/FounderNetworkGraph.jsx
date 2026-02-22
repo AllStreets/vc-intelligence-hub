@@ -11,10 +11,25 @@ const FounderNetworkGraph = memo(function FounderNetworkGraph({ data }) {
   useEffect(() => {
     if (!data || !containerRef.current) return;
 
+    // Deduplicate nodes - keep only unique founder IDs
+    const uniqueNodeIds = new Set();
+    const deduplicatedNodes = data.nodes.filter(node => {
+      if (uniqueNodeIds.has(node.data.id)) {
+        return false;
+      }
+      uniqueNodeIds.add(node.data.id);
+      return true;
+    });
+
+    // Filter edges to only include edges between unique nodes
+    const deduplicatedEdges = data.edges.filter(edge => {
+      return uniqueNodeIds.has(edge.data.source) && uniqueNodeIds.has(edge.data.target);
+    });
+
     // Initialize Cytoscape instance
     const cy = cytoscape({
       container: containerRef.current,
-      elements: [...data.nodes, ...data.edges],
+      elements: [...deduplicatedNodes, ...deduplicatedEdges],
       style: [
         {
           selector: 'node',
