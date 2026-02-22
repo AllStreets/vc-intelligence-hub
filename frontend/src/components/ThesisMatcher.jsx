@@ -1,0 +1,222 @@
+import { useState, useMemo } from 'react';
+
+export function ThesisMatcher({ trends, deals }) {
+  const [thesis, setThesis] = useState({
+    sectors: [],
+    stages: [],
+    minMomentum: 50,
+    minExits: 0,
+    minROI: 0
+  });
+
+  const [results, setResults] = useState([]);
+
+  const allSectors = ['AI/ML', 'Fintech', 'Climate', 'Healthcare', 'Cybersecurity', 'Web3', 'SaaS', 'EdTech', 'Biotech', 'Enterprise'];
+  const allStages = ['Seed', 'Series A', 'Series B', 'Series C', 'IPO'];
+
+  // Score trends/deals against thesis
+  const scoreOpportunity = (item) => {
+    let matches = 0;
+    let totalCriteria = 0;
+    const reasons = [];
+
+    // Check sector
+    if (thesis.sectors.length > 0) {
+      totalCriteria++;
+      const itemSector = item.category?.replace('-', ' ') || item.funding_type;
+      if (thesis.sectors.includes(itemSector)) {
+        matches++;
+        reasons.push(`✓ ${itemSector}`);
+      }
+    }
+
+    // Check stage
+    if (thesis.stages.length > 0) {
+      totalCriteria++;
+      if (thesis.stages.some(stage => item.funding_type?.includes(stage))) {
+        matches++;
+        reasons.push(`✓ ${item.funding_type}`);
+      }
+    }
+
+    // Check momentum
+    if (thesis.minMomentum > 0) {
+      totalCriteria++;
+      const momentum = Math.min(100, item.momentum_score * 2);
+      if (momentum >= thesis.minMomentum) {
+        matches++;
+        reasons.push(`✓ Momentum: ${momentum.toFixed(0)}`);
+      } else {
+        reasons.push(`✗ Momentum: ${momentum.toFixed(0)}`);
+      }
+    }
+
+    // Check founder quality
+    if ((thesis.minExits > 0 || thesis.minROI > 0) && item.founders?.length > 0) {
+      const topFounder = item.founders[0];
+      if (topFounder.investmentTrack) {
+        if (thesis.minExits > 0) {
+          totalCriteria++;
+          if (topFounder.investmentTrack.exits >= thesis.minExits) {
+            matches++;
+            reasons.push(`✓ ${topFounder.investmentTrack.exits} exits`);
+          }
+        }
+        if (thesis.minROI > 0) {
+          totalCriteria++;
+          if (topFounder.investmentTrack.averageROI >= thesis.minROI) {
+            matches++;
+            reasons.push(`✓ ${topFounder.investmentTrack.averageROI}% ROI`);
+          }
+        }
+      }
+    }
+
+    const percentage = totalCriteria > 0 ? Math.round((matches / totalCriteria) * 100) : 0;
+
+    return { percentage, reasons: reasons.slice(0, 3) };
+  };
+
+  // Update results when thesis or data changes
+  useMemo(() => {
+    const allItems = [...(trends || []), ...(deals || [])];
+    const scored = allItems.map(item => ({
+      ...item,
+      match: scoreOpportunity(item)
+    })).sort((a, b) => b.match.percentage - a.match.percentage);
+
+    setResults(scored);
+  }, [thesis, trends, deals]);
+
+  const toggleSector = (sector) => {
+    setThesis(prev => ({
+      ...prev,
+      sectors: prev.sectors.includes(sector)
+        ? prev.sectors.filter(s => s !== sector)
+        : [...prev.sectors, sector]
+    }));
+  };
+
+  const toggleStage = (stage) => {
+    setThesis(prev => ({
+      ...prev,
+      stages: prev.stages.includes(stage)
+        ? prev.stages.filter(s => s !== stage)
+        : [...prev.stages, stage]
+    }));
+  };
+
+  const getMatchColor = (percentage) => {
+    if (percentage >= 80) return 'bg-amber-900 text-amber-200';
+    if (percentage >= 60) return 'bg-amber-900/50 text-amber-200';
+    return 'bg-gray-700 text-gray-300';
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Preference Panel */}
+      <div className="bg-dark-700 rounded-lg border border-dark-600 p-6">
+        <h3 className="text-lg font-bold text-amber-400 mb-4">Set Your Investment Thesis</h3>
+
+        {/* Sectors */}
+        <div className="mb-6">
+          <label className="block text-sm font-semibold text-slate-300 mb-3">Target Sectors</label>
+          <div className="grid grid-cols-2 gap-2">
+            {allSectors.map(sector => (
+              <button
+                key={sector}
+                onClick={() => toggleSector(sector)}
+                className={`px-3 py-2 rounded text-sm transition-colors ${
+                  thesis.sectors.includes(sector)
+                    ? 'bg-amber-600 text-white'
+                    : 'bg-dark-600 text-slate-400 hover:bg-dark-500'
+                }`}
+              >
+                {sector}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Stages */}
+        <div className="mb-6">
+          <label className="block text-sm font-semibold text-slate-300 mb-3">Funding Stages</label>
+          <div className="grid grid-cols-3 gap-2">
+            {allStages.map(stage => (
+              <button
+                key={stage}
+                onClick={() => toggleStage(stage)}
+                className={`px-3 py-2 rounded text-sm transition-colors ${
+                  thesis.stages.includes(stage)
+                    ? 'bg-amber-600 text-white'
+                    : 'bg-dark-600 text-slate-400 hover:bg-dark-500'
+                }`}
+              >
+                {stage}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Momentum Threshold */}
+        <div className="mb-6">
+          <label className="block text-sm font-semibold text-slate-300 mb-2">Min Momentum: {thesis.minMomentum}</label>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={thesis.minMomentum}
+            onChange={(e) => setThesis(prev => ({ ...prev, minMomentum: parseInt(e.target.value) }))}
+            className="w-full"
+          />
+        </div>
+
+        {/* Founder Quality */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <div>
+            <label className="block text-sm font-semibold text-slate-300 mb-2">Min Exits: {thesis.minExits}</label>
+            <input
+              type="range"
+              min="0"
+              max="10"
+              value={thesis.minExits}
+              onChange={(e) => setThesis(prev => ({ ...prev, minExits: parseInt(e.target.value) }))}
+              className="w-full"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-300 mb-2">Min ROI: {thesis.minROI}%</label>
+            <input
+              type="range"
+              min="0"
+              max="500"
+              step="50"
+              value={thesis.minROI}
+              onChange={(e) => setThesis(prev => ({ ...prev, minROI: parseInt(e.target.value) }))}
+              className="w-full"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Results */}
+      <div className="bg-dark-700 rounded-lg border border-dark-600 p-6">
+        <h3 className="text-lg font-bold text-white mb-4">Matching Opportunities ({results.filter(r => r.match.percentage >= 60).length})</h3>
+
+        <div className="space-y-2 max-h-96 overflow-y-auto">
+          {results.slice(0, 20).map(item => (
+            <div key={item.id} className={`p-3 rounded flex justify-between items-center ${getMatchColor(item.match.percentage)}`}>
+              <div className="flex-1">
+                <p className="font-semibold">{item.company_name || item.name}</p>
+                <p className="text-xs opacity-80">{item.match.reasons.join(' • ')}</p>
+              </div>
+              <div className="text-right">
+                <span className="font-bold text-lg">{item.match.percentage}%</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
