@@ -1,14 +1,26 @@
 import { useState, useEffect } from 'react';
 
-export function FounderDetailsPanel({ founderId, onClose }) {
+export function FounderDetailsPanel({ founderId, founderData, onClose }) {
   const [founder, setFounder] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!founderId) return;
+    if (!founderId && !founderData) {
+      setFounder(null);
+      return;
+    }
 
-    fetchFounderDetails();
-  }, [founderId]);
+    // If founder data was passed directly from trend, use it
+    if (founderData) {
+      setFounder(founderData);
+      return;
+    }
+
+    // Otherwise, fetch from API (fallback)
+    if (founderId) {
+      fetchFounderDetails();
+    }
+  }, [founderId, founderData]);
 
   const fetchFounderDetails = async () => {
     try {
@@ -31,7 +43,7 @@ export function FounderDetailsPanel({ founderId, onClose }) {
     }
   };
 
-  if (!founderId) return null;
+  if (!founderId && !founderData) return null;
 
   return (
     <div className="fixed right-0 top-0 h-full w-96 bg-slate-800 border-l border-slate-700 shadow-xl z-50 overflow-y-auto">

@@ -43,7 +43,7 @@ export default function TrendsFeed({ trends, selectedTrend, onSelectTrend }) {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategories, setSelectedCategories] = useState([]);
-  const [selectedFounderId, setSelectedFounderId] = useState(null);
+  const [selectedFounder, setSelectedFounder] = useState(null);
 
   useEffect(() => {
     fetchTrends();
@@ -165,7 +165,7 @@ export default function TrendsFeed({ trends, selectedTrend, onSelectTrend }) {
                   {trend.founders?.map(founder => (
                     <button
                       key={founder.id}
-                      onClick={() => setSelectedFounderId(founder.id)}
+                      onClick={() => setSelectedFounder(founder)}
                       className="text-sm text-blue-400 hover:text-blue-300 hover:underline"
                     >
                       @{founder.name}
@@ -192,8 +192,9 @@ export default function TrendsFeed({ trends, selectedTrend, onSelectTrend }) {
       )}
 
       <FounderDetailsPanel
-        founderId={selectedFounderId}
-        onClose={() => setSelectedFounderId(null)}
+        founderId={selectedFounder?.id}
+        founderData={selectedFounder}
+        onClose={() => setSelectedFounder(null)}
       />
     </div>
   );
