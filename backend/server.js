@@ -117,38 +117,50 @@ function transformTrendsForFrontend(trends) {
 
 // Generate mock founder data for demo (in production, this would come from founder data sources)
 function generateMockFounders(trend) {
-  // Seed random based on trend name for consistency
-  const seed = trend.name.charCodeAt(0) + trend.name.charCodeAt(1);
-  const random = (seed % 10) / 10;
+  const firstNames = ['Sarah', 'Alex', 'Jordan', 'Casey', 'Morgan', 'Riley', 'Taylor', 'Avery', 'Quinn', 'Blake', 'Jordan', 'Casey', 'Morgan', 'Devon', 'Skyler', 'Reese', 'Cameron', 'Dakota'];
+  const lastNames = ['Chen', 'Rodriguez', 'Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Miller', 'Davis', 'Wilson', 'Garcia', 'Martinez', 'Lee', 'Wang', 'Kim', 'Patel'];
+  const titles = ['CEO', 'CTO', 'Co-Founder', 'Engineering Lead', 'Product Lead', 'Founder', 'Chief Product Officer', 'VP Engineering'];
+  const companies = ['Google', 'Facebook', 'Amazon', 'Microsoft', 'Apple', 'Tesla', 'Stripe', 'Airbnb', 'Uber', 'Slack', 'Notion', 'Figma'];
 
-  // Only generate founders for some trends (30% chance)
-  if (random < 0.7) return [];
+  // Create deterministic but varied seed
+  const seed = trend.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
 
-  const firstNames = ['Sarah', 'Alex', 'Jordan', 'Casey', 'Morgan', 'Riley', 'Taylor', 'Avery', 'Quinn', 'Blake'];
-  const lastNames = ['Chen', 'Rodriguez', 'Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Miller', 'Davis', 'Wilson'];
-  const titles = ['CEO', 'CTO', 'Co-Founder', 'Engineering Lead', 'Product Lead'];
+  // Generate founders for 40% of trends
+  if ((seed % 10) < 6) return [];
 
-  const founderCount = (seed % 3) + 1; // 1-3 founders
+  const founderCount = ((seed % 3) + 1); // 1-3 founders
   const founders = [];
 
   for (let i = 0; i < founderCount && i < 2; i++) {
-    const firstIdx = (seed + i * 100) % firstNames.length;
-    const lastIdx = (seed + i * 200) % lastNames.length;
-    const titleIdx = (seed + i * 300) % titles.length;
+    const nameIdx = (seed + i * 131) % firstNames.length;
+    const lastIdx = (seed + i * 257) % lastNames.length;
+    const titleIdx = (seed + i * 383) % titles.length;
+    const company1Idx = (seed + i * 449) % companies.length;
+    const company2Idx = (seed + i * 563) % companies.length;
+    const exits = ((seed + i * 719) % 8) + 1;
+    const roi = ((seed + i * 883) % 400) + 50;
+
+    const firstName = firstNames[nameIdx];
+    const lastName = lastNames[lastIdx];
+    const lowerFirst = firstName.toLowerCase();
+    const lowerLast = lastName.toLowerCase();
 
     founders.push({
       id: `founder-${trend.id}-${i}`,
-      name: `${firstNames[firstIdx]} ${lastNames[lastIdx]}`,
+      name: `${firstName} ${lastName}`,
       title: titles[titleIdx],
-      email: `${firstNames[firstIdx].toLowerCase()}.${lastNames[lastIdx].toLowerCase()}@company.com`,
+      email: `${lowerFirst}.${lowerLast}@founders.io`,
       social: {
-        twitter: `@${firstNames[firstIdx].toLowerCase()}${lastNames[lastIdx].toLowerCase()}`,
-        linkedin: `linkedin.com/in/${firstNames[firstIdx].toLowerCase()}-${lastNames[lastIdx].toLowerCase()}`,
-        angellist: `angel.co/u/${firstNames[firstIdx].toLowerCase()}-${lastNames[lastIdx].toLowerCase()}`
+        twitter: `@${lowerFirst}${lowerLast}`,
+        linkedin: `linkedin.com/in/${lowerFirst}-${lowerLast}`,
+        angellist: `angel.co/u/${lowerFirst}-${lowerLast}`
       },
       sectors: [trend.category],
-      pastCompanies: [],
-      investmentTrack: { exits: Math.floor(random * 5), averageROI: Math.floor(random * 300) + 50 }
+      pastCompanies: [
+        companies[company1Idx],
+        company2Idx !== company1Idx ? companies[company2Idx] : companies[(company2Idx + 1) % companies.length]
+      ],
+      investmentTrack: { exits: exits, averageROI: roi }
     });
   }
 
@@ -175,12 +187,54 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-app.get('/api/api-status', (req, res) => {
-  res.json({
-    apis: pluginManager.getPluginStatus(),
-    activePlugins: pluginManager.getActivePlugins(),
-    timestamp: new Date().toISOString()
-  });
+app.get('/api/api-status', async (req, res) => {
+  try {
+    // Get basic plugin status
+    const pluginStatus = pluginManager.getPluginStatus();
+
+    // Check which plugins have API keys configured
+    const hasApiKey = {
+      github: !!process.env.GITHUB_TOKEN,
+      newsapi: !!process.env.NEWSAPI_KEY,
+      serper: !!process.env.SERPER_API_KEY,
+      angellist: !!process.env.ANGELLIST_API_KEY,
+      twitter: !!process.env.TWITTER_BEARER_TOKEN
+    };
+
+    // Collect trends to see which sources return data
+    const { trends, sources } = await pluginService.collectTrends();
+    const sourceCounts = {};
+    sources?.forEach(source => {
+      sourceCounts[source] = (sourceCounts[source] || 0) + 1;
+    });
+
+    // Enhance plugin status with API key and data info
+    const enhancedApis = {};
+    for (const [name, config] of Object.entries(pluginStatus)) {
+      enhancedApis[name] = {
+        ...config,
+        hasApiKey: hasApiKey[name] || false,
+        dataAvailable: (sourceCounts[name] || 0) > 0,
+        itemCount: sourceCounts[name] || 0
+      };
+    }
+
+    res.json({
+      apis: enhancedApis,
+      activePlugins: pluginManager.getActivePlugins(),
+      dataSourcesWithData: Object.keys(sourceCounts),
+      totalTrends: trends.length,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    logger.error('Error in /api/api-status', { error: error.message });
+    res.json({
+      apis: pluginManager.getPluginStatus(),
+      activePlugins: pluginManager.getActivePlugins(),
+      error: 'Could not fetch data availability',
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // ============================================

@@ -1,48 +1,70 @@
 export default function APIStatusBar({ status }) {
   const apis = status.apis || {}
   const activePlugins = status.activePlugins || []
+  const totalTrends = status.totalTrends || 0
 
   // Plugins that require API keys
   const requiresApiKey = {
-    newsapi: 'NewsAPI Key',
-    serper: 'Serper Key',
-    github: 'GitHub Token',
-    angellist: 'AngelList Key',
-    twitter: 'Twitter Bearer'
+    newsapi: 'NewsAPI',
+    serper: 'Serper',
+    github: 'GitHub',
+    angellist: 'AngelList',
+    twitter: 'Twitter'
   }
 
-  const getTrendColor = (name, enabled) => {
-    if (!enabled) return 'bg-gray-800 text-gray-400'
-    // Plugins that need API keys show yellow if enabled (might not have key)
-    if (requiresApiKey[name]) return 'bg-yellow-900 text-yellow-200'
-    // Free plugins show green if enabled
-    return 'bg-green-900 text-green-200'
+  const getTrendColor = (config) => {
+    if (!config.enabled) return 'bg-gray-800 text-gray-400'
+    // Plugins with API keys and returning data = green
+    if (config.hasApiKey && config.dataAvailable) return 'bg-green-900 text-green-200'
+    // Plugins needing API keys but no key = yellow
+    if (requiresApiKey[config.name?.toLowerCase()] && !config.hasApiKey) return 'bg-yellow-900 text-yellow-200'
+    // Free plugins with data = green
+    if (config.dataAvailable) return 'bg-green-900 text-green-200'
+    // Enabled but no data yet = yellow
+    return 'bg-yellow-900 text-yellow-200'
   }
 
-  const getTitle = (name, enabled) => {
-    if (!enabled) return 'Disabled'
-    if (requiresApiKey[name]) return `${requiresApiKey[name]} - configure in .env`
+  const getTitle = (name, config) => {
+    if (!config.enabled) return 'Disabled'
+    if (config.dataAvailable) {
+      return `Active - ${config.itemCount || 0} items | ${config.hasApiKey ? 'API Key configured' : 'No API key needed'}`
+    }
+    if (requiresApiKey[name]) {
+      return `${requiresApiKey[name]} API key needed - configure in backend/.env`
+    }
     return 'Active (no API key needed)'
+  }
+
+  const getIndicatorColor = (config) => {
+    if (!config.enabled) return '#6b7280' // Gray
+    if (config.dataAvailable && config.hasApiKey) return '#22c55e' // Green
+    if (config.dataAvailable) return '#22c55e' // Green (free plugin)
+    if (requiresApiKey[config.name?.toLowerCase()] && !config.hasApiKey) return '#eab308' // Yellow
+    return '#eab308' // Yellow (waiting for data)
   }
 
   return (
     <div>
-      <p className="text-xs text-slate-400 mb-2 font-semibold">DATA SOURCES ({activePlugins.length} active):</p>
+      <p className="text-xs text-slate-400 mb-2 font-semibold">
+        DATA SOURCES ({activePlugins.length} active, {totalTrends} total trends):
+      </p>
       <div className="flex flex-wrap gap-2">
         {Object.entries(apis).map(([name, config]) => (
           <div
             key={name}
-            className={`status-badge px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${getTrendColor(name, config.enabled)}`}
-            title={getTitle(name, config.enabled)}
+            className={`status-badge px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${getTrendColor(config)}`}
+            title={getTitle(name, config)}
           >
-            <span className="status-indicator mr-2 inline-block w-1.5 h-1.5 rounded-full" style={{
-              backgroundColor: !config.enabled ? '#6b7280' : (requiresApiKey[name] ? '#eab308' : '#22c55e')
-            }}></span>
+            <span
+              className="status-indicator mr-2 inline-block w-1.5 h-1.5 rounded-full"
+              style={{ backgroundColor: getIndicatorColor(config) }}
+            ></span>
             {name.replace('_', ' ')}
+            {config.itemCount > 0 && <span className="ml-1 text-xs opacity-75">({config.itemCount})</span>}
           </div>
         ))}
       </div>
-      <p className="text-xs text-slate-500 mt-2">Yellow = needs API key | Green = active | Gray = disabled</p>
+      <p className="text-xs text-slate-500 mt-2">Green = data available | Yellow = needs API key or waiting | Gray = disabled</p>
     </div>
   )
 }

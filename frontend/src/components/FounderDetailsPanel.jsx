@@ -12,12 +12,21 @@ export function FounderDetailsPanel({ founderId, onClose }) {
 
   const fetchFounderDetails = async () => {
     try {
+      setLoading(true);
+      setFounder(null);
       const response = await fetch(`/api/founders/${founderId}`);
+      if (!response.ok) {
+        console.error('Founder not found:', response.status);
+        setFounder(null);
+        setLoading(false);
+        return;
+      }
       const data = await response.json();
       setFounder(data);
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching founder details:', error);
-    } finally {
+      setFounder(null);
       setLoading(false);
     }
   };
