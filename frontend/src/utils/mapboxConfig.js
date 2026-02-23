@@ -99,6 +99,7 @@ export function buildConnectionGeoJSON(founders, connections = []) {
           ]
         },
         properties: {
+          id: `conn-${idx}`,
           from: conn.from,
           to: conn.to
         }
