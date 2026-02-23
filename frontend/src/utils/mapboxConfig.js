@@ -18,3 +18,86 @@ export const US_CITIES = {
   'New York, NY': { lat: 40.7128, lng: -74.0060 },
   'Miami, FL': { lat: 25.7617, lng: -80.1918 }
 };
+
+/**
+ * Assign founders to cities with random offsets
+ * Creates slight variation so dots don't stack exactly on city center
+ */
+export function assignFoundersToCities(founders) {
+  return founders.map(founder => {
+    const city = founder.city; // "Chicago, IL" format
+    const cityCoords = US_CITIES[city];
+
+    if (!cityCoords) {
+      // Fallback to random US city if not recognized
+      const citiesArray = Object.values(US_CITIES);
+      const randomCity = citiesArray[Math.floor(Math.random() * citiesArray.length)];
+      return {
+        ...founder,
+        lng: randomCity.lng + (Math.random() - 0.5) * 0.1,
+        lat: randomCity.lat + (Math.random() - 0.5) * 0.1
+      };
+    }
+
+    // Add random offset (±0.05 degrees ≈ ±5.5km at equator)
+    return {
+      ...founder,
+      lng: cityCoords.lng + (Math.random() - 0.5) * 0.1,
+      lat: cityCoords.lat + (Math.random() - 0.5) * 0.1,
+      originalCity: city
+    };
+  });
+}
+
+/**
+ * Convert founder positions to GeoJSON FeatureCollection
+ */
+export function buildFounderGeoJSON(founders) {
+  return {
+    type: 'FeatureCollection',
+    features: founders.map(founder => ({
+      type: 'Feature',
+      id: founder.id,
+      geometry: {
+        type: 'Point',
+        coordinates: [founder.lng, founder.lat]
+      },
+      properties: {
+        name: founder.name,
+        city: founder.originalCity || founder.city,
+        id: founder.id
+      }
+    }))
+  };
+}
+
+/**
+ * Convert founder connections to GeoJSON LineString features
+ */
+export function buildConnectionGeoJSON(founders, connections = []) {
+  return {
+    type: 'FeatureCollection',
+    features: connections.map((conn, idx) => {
+      const founder1 = founders.find(f => f.id === conn.from);
+      const founder2 = founders.find(f => f.id === conn.to);
+
+      if (!founder1 || !founder2) return null;
+
+      return {
+        type: 'Feature',
+        id: `conn-${idx}`,
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [founder1.lng, founder1.lat],
+            [founder2.lng, founder2.lat]
+          ]
+        },
+        properties: {
+          from: conn.from,
+          to: conn.to
+        }
+      };
+    }).filter(f => f !== null)
+  };
+}
