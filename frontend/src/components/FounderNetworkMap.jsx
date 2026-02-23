@@ -13,83 +13,107 @@ export function FounderNetworkMap({ data }) {
   const [selectedFounder, setSelectedFounder] = useState(null);
   const [draggingFounderId, setDraggingFounderId] = useState(null);
 
-  // Extract and position founders
-  useEffect(() => {
-    if (!data || !data.nodes || data.nodes.length === 0) {
-      setFounders([]);
-      return;
-    }
-
-    // Convert node data to founder objects
-    const founderList = data.nodes.map(node => ({
-      id: node.id,
-      name: node.name,
-      city: node.city || 'Chicago, IL',
-      ...node
-    }));
-
-    // Assign to cities with offsets
-    const positionedFounders = assignFoundersToCities(founderList);
-    setFounders(positionedFounders);
-  }, [data]);
-
-  // Initialize Mapbox map
+  // Initialize Mapbox map and position founders
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
-    if (founders.length === 0) return;
+    if (!data || !data.nodes || data.nodes.length === 0) return;
+
+    // Position founders at cities with random offsets
+    const positionedFounders = assignFoundersToCities(data.nodes);
+    setFounders(positionedFounders);
 
     // Initialize map
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: MAP_CONFIG.style,
       center: MAP_CONFIG.center,
-      zoom: MAP_CONFIG.zoom
+      zoom: MAP_CONFIG.zoom,
+      pitch: MAP_CONFIG.pitch || 0,
+      bearing: MAP_CONFIG.bearing || 0
     });
 
     map.current.on('load', () => {
-      // Add founder dots source
-      const founderGeoJSON = buildFounderGeoJSON(founders);
+      // Add founder positions as GeoJSON source
+      const founderGeoJSON = buildFounderGeoJSON(positionedFounders);
 
       map.current.addSource('founders', {
         type: 'geojson',
         data: founderGeoJSON
       });
 
-      // Add founder circles layer
+      // Circle layer for founder dots
       map.current.addLayer({
         id: 'founder-dots',
         type: 'circle',
         source: 'founders',
         paint: {
           'circle-radius': 12,
-          'circle-color': '#ef4444', // red
-          'circle-opacity': 0.9,
+          'circle-color': '#EF4444',
+          'circle-opacity': 0.8,
           'circle-stroke-width': 2,
-          'circle-stroke-color': '#ffffff'
+          'circle-stroke-color': '#fff',
+          'circle-stroke-opacity': 0.3
         }
       });
 
-      // Add founder labels layer
+      // Symbol layer for founder labels
       map.current.addLayer({
         id: 'founder-labels',
         type: 'symbol',
         source: 'founders',
         layout: {
           'text-field': ['get', 'name'],
-          'text-size': 11,
-          'text-anchor': 'bottom',
-          'text-offset': [0, -1.5],
-          'text-allow-overlap': false,
-          'text-ignore-placement': false
+          'text-size': 10,
+          'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
+          'text-allow-overlap': true
         },
         paint: {
-          'text-color': '#ffffff',
+          'text-color': '#fff',
+          'text-opacity': 0.7,
           'text-halo-color': '#000000',
           'text-halo-width': 1
         }
       });
 
-      console.log('Map loaded with', founders.length, 'founders');
+      console.log('Map loaded with', positionedFounders.length, 'founders');
+
+      // Extract connections from data.edges
+      const connections = data.edges?.map(edge => ({
+        from: edge.data?.source || edge.source,
+        to: edge.data?.target || edge.target,
+        strength: edge.data?.strength || 1,
+        id: edge.data?.id || edge.id
+      })) || [];
+
+      console.log('Processing connections:', connections.length);
+
+      // Build connection lines GeoJSON
+      const connectionGeoJSON = buildConnectionGeoJSON(positionedFounders, connections);
+      console.log('Built connections GeoJSON with', connectionGeoJSON.features.length, 'lines');
+
+      // Add connections source (must be added after founders source)
+      if (connectionGeoJSON.features.length > 0) {
+        map.current.addSource('connections', {
+          type: 'geojson',
+          data: connectionGeoJSON
+        });
+
+        // Add connection lines layer (gray, below founder dots)
+        map.current.addLayer({
+          id: 'connection-lines',
+          type: 'line',
+          source: 'connections',
+          layout: {
+            'line-join': 'round',
+            'line-cap': 'round'
+          },
+          paint: {
+            'line-color': '#888888',
+            'line-width': 2,
+            'line-opacity': 0.5
+          }
+        }, 'founder-dots');  // Insert before founder dots so dots appear on top
+      }
     });
 
     return () => {
@@ -98,7 +122,7 @@ export function FounderNetworkMap({ data }) {
         map.current = null;
       }
     };
-  }, [founders]);
+  }, [data?.nodes]);
 
   // Empty state
   if (!data || !data.nodes || data.nodes.length === 0) {
