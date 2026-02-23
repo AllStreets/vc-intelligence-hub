@@ -13,6 +13,22 @@ export function FounderNetworkMap({ data }) {
   const [selectedFounder, setSelectedFounder] = useState(null);
   const [draggingFounderId, setDraggingFounderId] = useState(null);
 
+  // Reset highlight function for use in onClose
+  const handleResetHighlight = useCallback(() => {
+    if (!map.current) return;
+
+    console.log('Resetting highlight');
+    setSelectedFounder(null);
+
+    // Reset all founder dots to red
+    map.current.setPaintProperty('founder-dots', 'circle-color', '#ef4444');
+
+    // Reset all connection lines to gray
+    map.current.setPaintProperty('connection-lines', 'line-color', '#888888');
+    map.current.setPaintProperty('connection-lines', 'line-width', 2);
+    map.current.setPaintProperty('connection-lines', 'line-opacity', 0.5);
+  }, []);
+
   // Initialize Mapbox map and position founders
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
@@ -114,6 +130,108 @@ export function FounderNetworkMap({ data }) {
           }
         }, 'founder-dots');  // Insert before founder dots so dots appear on top
       }
+
+      // Highlight founder connections function
+      const highlightFounderConnections = (founderId) => {
+        console.log('Highlighting connections for:', founderId);
+
+        // Find all connections involving this founder
+        const connectedFounderIds = new Set();
+        const connectedConnectionIds = new Set();
+
+        connections.forEach((conn, idx) => {
+          if (conn.from === founderId) {
+            connectedFounderIds.add(conn.to);
+            connectedConnectionIds.add(`conn-${idx}`);
+          } else if (conn.to === founderId) {
+            connectedFounderIds.add(conn.from);
+            connectedConnectionIds.add(`conn-${idx}`);
+          }
+        });
+
+        console.log('Connected to', connectedFounderIds.size, 'other founders');
+
+        // Highlight selected founder (yellow) and connected founders (orange)
+        map.current.setPaintProperty('founder-dots', 'circle-color', [
+          'case',
+          ['==', ['get', 'founderId'], founderId],
+          '#FFD700', // Gold/yellow for selected
+          ['in', ['get', 'founderId'], ['literal', Array.from(connectedFounderIds)]],
+          '#FF8C00', // Dark orange for connected
+          '#ef4444'  // Red for others (default)
+        ]);
+
+        // Brighten connection lines that involve this founder
+        map.current.setPaintProperty('connection-lines', 'line-color', [
+          'case',
+          ['in', ['get', 'id'], ['literal', Array.from(connectedConnectionIds)]],
+          '#FFD700', // Gold for connected lines
+          '#888888'  // Gray for others (default)
+        ]);
+
+        // Make connected lines thicker
+        map.current.setPaintProperty('connection-lines', 'line-width', [
+          'case',
+          ['in', ['get', 'id'], ['literal', Array.from(connectedConnectionIds)]],
+          3, // Thicker for connected
+          2  // Normal width for others
+        ]);
+
+        // Increase opacity of connected lines
+        map.current.setPaintProperty('connection-lines', 'line-opacity', [
+          'case',
+          ['in', ['get', 'id'], ['literal', Array.from(connectedConnectionIds)]],
+          0.8,  // Brighter for connected
+          0.5   // Default opacity for others
+        ]);
+      };
+
+      // Reset highlight function
+      const resetHighlight = () => {
+        console.log('Resetting highlight');
+        setSelectedFounder(null);
+
+        // Reset all founder dots to red
+        map.current.setPaintProperty('founder-dots', 'circle-color', '#ef4444');
+
+        // Reset all connection lines to gray
+        map.current.setPaintProperty('connection-lines', 'line-color', '#888888');
+        map.current.setPaintProperty('connection-lines', 'line-width', 2);
+        map.current.setPaintProperty('connection-lines', 'line-opacity', 0.5);
+      };
+
+      // Add click event listener for founder dots
+      map.current.on('click', 'founder-dots', (e) => {
+        if (e.features && e.features.length > 0) {
+          const feature = e.features[0];
+          const founderId = feature.properties.founderId;
+
+          console.log('Clicked founder:', founderId, feature.properties.name);
+
+          // Find the founder object to pass to details panel
+          const founder = positionedFounders.find(f => f.founderId === founderId);
+          if (founder) {
+            setSelectedFounder(founder);
+            highlightFounderConnections(founderId);
+          }
+        }
+      });
+
+      // Add click event listener to map background to deselect
+      map.current.on('click', (e) => {
+        if (!e.features || e.features.length === 0) {
+          resetHighlight();
+        }
+      });
+
+      // Change cursor on hover over founder dots
+      map.current.on('mouseenter', 'founder-dots', () => {
+        map.current.getCanvas().style.cursor = 'pointer';
+      });
+
+      map.current.on('mouseleave', 'founder-dots', () => {
+        map.current.getCanvas().style.cursor = '';
+      });
     });
 
     return () => {
@@ -139,7 +257,7 @@ export function FounderNetworkMap({ data }) {
       {selectedFounder && (
         <FounderDetailsPanel
           founderData={selectedFounder}
-          onClose={() => setSelectedFounder(null)}
+          onClose={handleResetHighlight}
         />
       )}
     </div>

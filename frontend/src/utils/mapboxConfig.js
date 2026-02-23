@@ -21,30 +21,33 @@ export const US_CITIES = {
 
 /**
  * Assign founders to cities with random offsets
- * Creates slight variation so dots don't stack exactly on city center
+ * Input: nodes array with structure {data: {id, label}}
+ * Output: positioned founders array with all required properties
  */
-export function assignFoundersToCities(founders) {
-  return founders.map(founder => {
-    const city = founder.city; // "Chicago, IL" format
+export function assignFoundersToCities(nodes) {
+  const cityNames = Object.keys(US_CITIES);
+
+  return nodes.map((node, index) => {
+    // Handle spec data structure: {data: {id, label}}
+    const founderId = node.data?.id || node.id;
+    const name = node.data?.label || node.name || 'Unknown';
+
+    // Round-robin distribution across 6 cities
+    const city = cityNames[index % cityNames.length];
     const cityCoords = US_CITIES[city];
 
-    if (!cityCoords) {
-      // Fallback to random US city if not recognized
-      const citiesArray = Object.values(US_CITIES);
-      const randomCity = citiesArray[Math.floor(Math.random() * citiesArray.length)];
-      return {
-        ...founder,
-        lng: randomCity.lng + (Math.random() - 0.5) * 0.1,
-        lat: randomCity.lat + (Math.random() - 0.5) * 0.1
-      };
-    }
+    // Random offset (±0.015 degrees ≈ ±1.7km)
+    const offsetLat = (Math.random() - 0.5) * 0.03;
+    const offsetLng = (Math.random() - 0.5) * 0.03;
 
-    // Add random offset (±0.05 degrees ≈ ±5.5km at equator)
     return {
-      ...founder,
-      lng: cityCoords.lng + (Math.random() - 0.5) * 0.1,
-      lat: cityCoords.lat + (Math.random() - 0.5) * 0.1,
-      originalCity: city
+      founderId: founderId,
+      name: name,
+      city: city,
+      lat: cityCoords.lat + offsetLat,
+      lng: cityCoords.lng + offsetLng,
+      cityLat: cityCoords.lat,
+      cityLng: cityCoords.lng
     };
   });
 }
@@ -55,17 +58,19 @@ export function assignFoundersToCities(founders) {
 export function buildFounderGeoJSON(founders) {
   return {
     type: 'FeatureCollection',
-    features: founders.map(founder => ({
+    features: founders.map(f => ({
       type: 'Feature',
-      id: founder.id,
+      id: f.founderId,
       geometry: {
         type: 'Point',
-        coordinates: [founder.lng, founder.lat]
+        coordinates: [f.lng, f.lat]
       },
       properties: {
-        name: founder.name,
-        city: founder.originalCity || founder.city,
-        id: founder.id
+        founderId: f.founderId,
+        name: f.name,
+        city: f.city,
+        cityLat: f.cityLat,
+        cityLng: f.cityLng
       }
     }))
   };
@@ -78,8 +83,8 @@ export function buildConnectionGeoJSON(founders, connections = []) {
   return {
     type: 'FeatureCollection',
     features: connections.map((conn, idx) => {
-      const founder1 = founders.find(f => f.id === conn.from);
-      const founder2 = founders.find(f => f.id === conn.to);
+      const founder1 = founders.find(f => f.founderId === conn.from);
+      const founder2 = founders.find(f => f.founderId === conn.to);
 
       if (!founder1 || !founder2) return null;
 
