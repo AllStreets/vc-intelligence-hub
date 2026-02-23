@@ -3,6 +3,46 @@ import { FounderNetworkMap } from '../components/FounderNetworkMap';
 import { SectorHeatmap } from '../components/SectorHeatmap';
 import { fetchTrendsWithCache, fetchDealsWithCache, getApiBaseUrl } from '../services/dataCache';
 
+// Cities for founder generation (same as DealPipeline)
+const US_CITIES = [
+  { name: 'Chicago', state: 'IL' },
+  { name: 'San Francisco', state: 'CA' },
+  { name: 'Cary', state: 'NC' },
+  { name: 'Seattle', state: 'WA' },
+  { name: 'New York', state: 'NY' },
+  { name: 'Miami', state: 'FL' }
+];
+
+// Founder titles - varied and realistic
+const FOUNDER_TITLES = ['CEO', 'CTO', 'CFO', 'Founder', 'Chairman', 'President', 'VP Engineering', 'VP Product', 'VC Manager', 'Partner'];
+
+// Generate fake founder data with city information
+const generateFakeFounders = (dealId) => {
+  const founderCount = Math.floor(Math.random() * 4) + 1; // 1-4 founders
+  const firstNames = ['Alex', 'Jordan', 'Taylor', 'Morgan', 'Casey', 'Riley', 'Avery', 'Quinn', 'Drew', 'Blake', 'Sage', 'Cameron'];
+  const lastNames = ['Chen', 'Smith', 'Johnson', 'Williams', 'Brown', 'Davis', 'Garcia', 'Miller', 'Wilson', 'Moore', 'Taylor', 'Anderson'];
+
+  const founders = [];
+  for (let i = 0; i < founderCount; i++) {
+    const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+    const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+    const city = US_CITIES[Math.floor(Math.random() * US_CITIES.length)];
+    const title = FOUNDER_TITLES[Math.floor(Math.random() * FOUNDER_TITLES.length)];
+
+    founders.push({
+      id: `founder-${dealId}-${i}`,
+      name: `${firstName} ${lastName}`,
+      title: title,
+      city: `${city.name}, ${city.state}`,
+      twitter: `https://twitter.com/${firstName.toLowerCase()}${lastName.toLowerCase()}`,
+      linkedin: `https://linkedin.com/in/${firstName.toLowerCase()}-${lastName.toLowerCase()}`,
+      angellist: `https://angel.co/${firstName.toLowerCase()}${lastName.toLowerCase()}`
+    });
+  }
+
+  return founders;
+};
+
 // Build founder network from deals
 const buildFounderNetworkFromDeals = (deals) => {
   const founderMap = new Map();
@@ -76,7 +116,14 @@ export function Evaluate() {
 
       // Fetch deals for heatmap and founder network
       const dealsJson = await fetchDealsWithCache();
-      const dealsData = dealsJson.deals || [];
+      let dealsData = dealsJson.deals || [];
+
+      // Add generated founders to each deal (same as DealPipeline does)
+      dealsData = dealsData.map(deal => ({
+        ...deal,
+        founders: generateFakeFounders(deal.id)
+      }));
+
       setDeals(dealsData);
 
       // Build founder network from deals

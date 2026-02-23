@@ -21,6 +21,9 @@ const US_CITIES = [
   { name: 'Miami', state: 'FL' }
 ];
 
+// Founder titles - varied and realistic
+const FOUNDER_TITLES = ['CEO', 'CTO', 'CFO', 'Founder', 'Chairman', 'President', 'VP Engineering', 'VP Product', 'VC Manager', 'Partner'];
+
 // Generate fake founder data with city information
 const generateFakeFounders = (dealId) => {
   const founderCount = Math.floor(Math.random() * 4) + 1; // 1-4 founders
@@ -32,10 +35,12 @@ const generateFakeFounders = (dealId) => {
     const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
     const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
     const city = US_CITIES[Math.floor(Math.random() * US_CITIES.length)];
+    const title = FOUNDER_TITLES[Math.floor(Math.random() * FOUNDER_TITLES.length)];
 
     founders.push({
       id: `founder-${dealId}-${i}`,
       name: `${firstName} ${lastName}`,
+      title: title,
       city: `${city.name}, ${city.state}`,
       twitter: `https://twitter.com/${firstName.toLowerCase()}${lastName.toLowerCase()}`,
       linkedin: `https://linkedin.com/in/${firstName.toLowerCase()}-${lastName.toLowerCase()}`,
@@ -67,6 +72,9 @@ function DraggableDealCard({ deal, stageId, onDelete }) {
         {deal.founders?.length > 0 && (
           <>
             <p className="text-xs text-amber-400 mt-1">👤 {deal.founders[0].name}</p>
+            {deal.founders[0].title && (
+              <p className="text-xs text-amber-300 mt-0.5">{deal.founders[0].title}</p>
+            )}
             {deal.founders[0].city && (
               <p className="text-xs text-slate-500 mt-0.5">📍 {deal.founders[0].city}</p>
             )}
