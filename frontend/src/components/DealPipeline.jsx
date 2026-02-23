@@ -1,7 +1,7 @@
 import { useState, useEffect, memo } from 'react';
 import { DndContext, useDraggable, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { DroppableArea } from './DroppableArea';
-import { XMarkIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, PlusIcon, TrashIcon, UserIcon, MapPinIcon, CheckCircleIcon, ArrowTrendingUpIcon } from '@heroicons/react/24/outline';
 import { fetchDealsWithCache, getApiBaseUrl } from '../services/dataCache';
 
 const pipelineStages = [
@@ -94,10 +94,13 @@ function DraggableDealCard({ deal, stageId, onDelete }) {
         <p className="text-xs text-slate-400 mt-1">{deal.funding_type}</p>
         {deal.founders?.length > 0 && (
           <div className="mt-2 space-y-1">
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-amber-400">👤 {deal.founders[0].name}</p>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1 text-xs text-amber-400">
+                <UserIcon className="w-3.5 h-3.5" />
+                <span>{deal.founders[0].name}</span>
+              </div>
               {deal.founders[0].founderScore && (
-                <span className={`px-1.5 py-0.5 rounded text-xs font-semibold ${
+                <span className={`px-1.5 py-0.5 rounded text-xs font-semibold flex-shrink-0 ${
                   deal.founders[0].founderScore >= 80 ? 'bg-green-900 text-green-200' :
                   deal.founders[0].founderScore >= 60 ? 'bg-blue-900 text-blue-200' :
                   deal.founders[0].founderScore >= 40 ? 'bg-yellow-900 text-yellow-200' :
@@ -111,17 +114,24 @@ function DraggableDealCard({ deal, stageId, onDelete }) {
               <p className="text-xs text-amber-300">{deal.founders[0].title}</p>
             )}
             {deal.founders[0].city && (
-              <p className="text-xs text-slate-500">📍 {deal.founders[0].city}</p>
+              <div className="text-xs text-slate-500 flex items-center gap-1">
+                <MapPinIcon className="w-3.5 h-3.5" />
+                <span>{deal.founders[0].city}</span>
+              </div>
             )}
             {deal.founders[0].investmentTrack && (
               <div className="text-xs text-slate-400 space-y-0.5">
                 {deal.founders[0].investmentTrack.exits > 0 && (
-                  <p>🎯 {deal.founders[0].investmentTrack.exits} exits</p>
+                  <div className="flex items-center gap-1">
+                    <CheckCircleIcon className="w-3.5 h-3.5" />
+                    <span>{deal.founders[0].investmentTrack.exits} exits</span>
+                  </div>
                 )}
                 {deal.founders[0].investmentTrack.averageROI && (
-                  <p className={deal.founders[0].investmentTrack.averageROI >= 1000 ? 'text-green-400 font-semibold' : ''}>
-                    📈 {deal.founders[0].investmentTrack.averageROI.toLocaleString()}% ROI
-                  </p>
+                  <div className={`flex items-center gap-1 ${deal.founders[0].investmentTrack.averageROI >= 1000 ? 'text-green-400 font-semibold' : ''}`}>
+                    <ArrowTrendingUpIcon className="w-3.5 h-3.5" />
+                    <span>{deal.founders[0].investmentTrack.averageROI.toLocaleString()}% ROI</span>
+                  </div>
                 )}
               </div>
             )}
