@@ -173,22 +173,10 @@ const DealPipeline = memo(function DealPipeline() {
       data = data.filter(isHighQualityDeal);
 
       // Enrich deals with fake founder data
-      data = data.map((deal, idx) => {
-        const enrichedDeal = {
-          ...deal,
-          founders: deal.founders && deal.founders.length > 0 ? deal.founders : generateFakeFounders(deal.id)
-        };
-        // Debug: log sample founder data
-        if (idx === 0 && enrichedDeal.founders?.length > 0) {
-          console.log('[DealPipeline] First deal:', {
-            company: enrichedDeal.company_name,
-            founder: enrichedDeal.founders[0].name,
-            title: enrichedDeal.founders[0].title,
-            city: enrichedDeal.founders[0].city
-          });
-        }
-        return enrichedDeal;
-      });
+      data = data.map(deal => ({
+        ...deal,
+        founders: deal.founders && deal.founders.length > 0 ? deal.founders : generateFakeFounders(deal.id)
+      }));
 
       // Initialize pipeline by status
       const staged = {};
