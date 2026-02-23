@@ -11,7 +11,7 @@ export function FounderNetworkMap({ data }) {
   const map = useRef(null);
   const [founders, setFounders] = useState([]);
   const [selectedFounder, setSelectedFounder] = useState(null);
-  const [draggingFounderId, setDraggingFounderId] = useState(null);
+  const draggingFounderId = useRef(null);  // Use ref to avoid closure issues
   const draggedPositions = useRef({});  // Track {founderId: {lng, lat}} for dragged dots
 
   // Reset highlight function for use in onClose
@@ -240,8 +240,8 @@ export function FounderNetworkMap({ data }) {
           const founderId = e.features[0].properties.founderId;
           console.log('Drag started for founder:', founderId);
 
-          // Set dragging flag and initial position
-          setDraggingFounderId(founderId);
+          // Set dragging flag using ref (avoids closure issues)
+          draggingFounderId.current = founderId;
 
           // Prevent map from panning during drag
           e.preventDefault();
@@ -250,10 +250,15 @@ export function FounderNetworkMap({ data }) {
 
       // Drag move listener
       map.current.on('mousemove', (e) => {
-        if (!draggingFounderId) return;
+        if (!draggingFounderId.current) return;
+
+        // Prevent map from panning while dragging
+        e.preventDefault();
+
+        const currentDraggingId = draggingFounderId.current;
 
         // Update dragged position for this founder
-        draggedPositions.current[draggingFounderId] = {
+        draggedPositions.current[currentDraggingId] = {
           lng: e.lngLat.lng,
           lat: e.lngLat.lat
         };
@@ -323,9 +328,9 @@ export function FounderNetworkMap({ data }) {
 
       // Drag end listener
       map.current.on('mouseup', () => {
-        if (draggingFounderId) {
-          console.log('Drag ended for founder:', draggingFounderId);
-          setDraggingFounderId(null);
+        if (draggingFounderId.current) {
+          console.log('Drag ended for founder:', draggingFounderId.current);
+          draggingFounderId.current = null;
         }
       });
     });
@@ -335,6 +340,15 @@ export function FounderNetworkMap({ data }) {
       draggedPositions.current = {};
 
       if (map.current) {
+        // Remove all registered event listeners before removing map
+        map.current.off('mousedown', 'founder-dots');
+        map.current.off('mousemove');
+        map.current.off('mouseup');
+        map.current.off('click', 'founder-dots');
+        map.current.off('click');
+        map.current.off('mouseenter', 'founder-dots');
+        map.current.off('mouseleave', 'founder-dots');
+
         map.current.remove();
         map.current = null;
       }
