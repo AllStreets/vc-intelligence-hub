@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { MapPinIcon, CheckCircleIcon, ArrowTrendingUpIcon } from '@heroicons/react/24/outline';
 
 // Fake data generators
 const founderSectors = ['AI/ML', 'Fintech', 'Climate', 'Healthcare', 'Cybersecurity', 'Web3', 'SaaS', 'EdTech', 'Biotech', 'Enterprise'];
@@ -122,7 +123,10 @@ export function FounderDetailsPanel({ founderId, founderData, onClose }) {
             <h2 className="text-2xl font-bold text-white">{founder.name}</h2>
             <p className="text-slate-400">{founder.title}</p>
             {founder.city && (
-              <p className="text-sm text-slate-500 mt-1">📍 Based out of {founder.city}</p>
+              <p className="text-sm text-slate-500 mt-1 flex items-center justify-center gap-1">
+                <MapPinIcon className="w-4 h-4" />
+                Based out of {founder.city}
+              </p>
             )}
           </div>
 
@@ -203,10 +207,18 @@ export function FounderDetailsPanel({ founderId, founderData, onClose }) {
           {founder.investmentTrack && (
             <div>
               <h3 className="text-sm font-semibold text-slate-300 mb-2">Investment Track Record</h3>
-              <ul className="space-y-1 text-sm text-slate-300">
-                <li>• {founder.investmentTrack.exits} successful exits</li>
-                <li>• {founder.investmentTrack.averageROI}% average ROI</li>
-              </ul>
+              <div className="space-y-2 text-sm text-slate-300">
+                <div className="flex items-center gap-2">
+                  <CheckCircleIcon className="w-4 h-4" />
+                  <span>{founder.investmentTrack.exits} successful exits</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <ArrowTrendingUpIcon className="w-4 h-4" />
+                  <span className={founder.investmentTrack.averageROI >= 1000 ? 'text-green-400 font-semibold' : ''}>
+                    {founder.investmentTrack.averageROI.toLocaleString()}% average ROI
+                  </span>
+                </div>
+              </div>
             </div>
           )}
         </div>
