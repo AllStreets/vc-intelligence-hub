@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { TrashIcon, UserIcon, MapPinIcon, CheckCircleIcon, ArrowTrendingUpIcon } from '@heroicons/react/24/outline';
+import { TrashIcon } from '@heroicons/react/24/outline';
 import { FounderDetailsPanel } from './FounderDetailsPanel';
 
 const dealTypeCategories = ['Funding', 'Investment', 'Funding Round', 'Seed/Series A', 'Series B', 'Series C', 'IPO', 'Acquisition'];
@@ -307,10 +307,9 @@ export default function DealDiscovery({ deals, onSearchSubmit }) {
                       onClick={() => setSelectedFounder(founder)}
                       className="block w-full text-left p-2 rounded hover:bg-slate-700 transition-colors"
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1.5 text-blue-400 hover:text-blue-300 font-semibold">
-                          <UserIcon className="w-4 h-4" />
-                          <span>{founder.name}</span>
+                      <div className="flex items-center justify-between">
+                        <div className="text-blue-400 hover:text-blue-300 font-semibold">
+                          👤 {founder.name}
                         </div>
                         {founder.founderScore && (
                           <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
@@ -327,23 +326,16 @@ export default function DealDiscovery({ deals, onSearchSubmit }) {
                         <div className="text-amber-300 mt-0.5">{founder.title}</div>
                       )}
                       {founder.city && (
-                        <div className="text-gray-400 mt-0.5 flex items-center gap-1.5">
-                          <MapPinIcon className="w-3.5 h-3.5" />
-                          <span>{founder.city}</span>
-                        </div>
+                        <div className="text-gray-400 mt-0.5">📍 {founder.city}</div>
                       )}
                       {founder.investmentTrack && (
                         <div className="mt-1 flex gap-3 text-gray-300 text-xs">
                           {founder.investmentTrack.exits > 0 && (
-                            <span className="flex items-center gap-1">
-                              <CheckCircleIcon className="w-3.5 h-3.5" />
-                              {founder.investmentTrack.exits} exits
-                            </span>
+                            <span>🎯 {founder.investmentTrack.exits} exits</span>
                           )}
                           {founder.investmentTrack.averageROI && (
-                            <span className={`flex items-center gap-1 ${founder.investmentTrack.averageROI >= 1000 ? 'text-green-400 font-semibold' : ''}`}>
-                              <ArrowTrendingUpIcon className="w-3.5 h-3.5" />
-                              {founder.investmentTrack.averageROI.toLocaleString()}% ROI
+                            <span className={founder.investmentTrack.averageROI >= 1000 ? 'text-green-400 font-semibold' : ''}>
+                              📈 {founder.investmentTrack.averageROI.toLocaleString()}% ROI
                             </span>
                           )}
                         </div>
