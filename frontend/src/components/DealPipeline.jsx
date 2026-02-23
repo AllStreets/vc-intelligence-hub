@@ -24,6 +24,24 @@ const US_CITIES = [
 // Founder titles - varied and realistic
 const FOUNDER_TITLES = ['CEO', 'CTO', 'CFO', 'Founder', 'Chairman', 'President', 'VP Engineering', 'VP Product', 'VC Manager', 'Partner'];
 
+// Generate realistic ROI with some normal (100-300%) and some extreme (5000%+)
+const generateRealisticROI = () => {
+  const random = Math.random();
+  if (random < 0.1) {
+    // 10% chance of extreme outlier (5000%+)
+    return Math.floor(Math.random() * 15000) + 5000;
+  } else if (random < 0.25) {
+    // 15% chance of very good (1000-5000%)
+    return Math.floor(Math.random() * 4000) + 1000;
+  } else if (random < 0.6) {
+    // 35% chance of good (300-1000%)
+    return Math.floor(Math.random() * 700) + 300;
+  } else {
+    // 40% chance of normal (50-300%)
+    return Math.floor(Math.random() * 250) + 50;
+  }
+};
+
 // Generate fake founder data with city information
 const generateFakeFounders = (dealId) => {
   const founderCount = Math.floor(Math.random() * 4) + 1; // 1-4 founders
@@ -42,6 +60,11 @@ const generateFakeFounders = (dealId) => {
       name: `${firstName} ${lastName}`,
       title: title,
       city: `${city.name}, ${city.state}`,
+      founderScore: Math.floor(Math.random() * 100) + 1, // 1-100
+      investmentTrack: {
+        exits: Math.floor(Math.random() * 8), // 0-7 exits
+        averageROI: generateRealisticROI()
+      },
       twitter: `https://twitter.com/${firstName.toLowerCase()}${lastName.toLowerCase()}`,
       linkedin: `https://linkedin.com/in/${firstName.toLowerCase()}-${lastName.toLowerCase()}`,
       angellist: `https://angel.co/${firstName.toLowerCase()}${lastName.toLowerCase()}`
@@ -70,15 +93,39 @@ function DraggableDealCard({ deal, stageId, onDelete }) {
         <p className="font-semibold text-white text-sm">{deal.company_name}</p>
         <p className="text-xs text-slate-400 mt-1">{deal.funding_type}</p>
         {deal.founders?.length > 0 && (
-          <>
-            <p className="text-xs text-amber-400 mt-1">👤 {deal.founders[0].name}</p>
+          <div className="mt-2 space-y-1">
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-amber-400">👤 {deal.founders[0].name}</p>
+              {deal.founders[0].founderScore && (
+                <span className={`px-1.5 py-0.5 rounded text-xs font-semibold ${
+                  deal.founders[0].founderScore >= 80 ? 'bg-green-900 text-green-200' :
+                  deal.founders[0].founderScore >= 60 ? 'bg-blue-900 text-blue-200' :
+                  deal.founders[0].founderScore >= 40 ? 'bg-yellow-900 text-yellow-200' :
+                  'bg-orange-900 text-orange-200'
+                }`}>
+                  {deal.founders[0].founderScore}
+                </span>
+              )}
+            </div>
             {deal.founders[0].title && (
-              <p className="text-xs text-amber-300 mt-0.5">{deal.founders[0].title}</p>
+              <p className="text-xs text-amber-300">{deal.founders[0].title}</p>
             )}
             {deal.founders[0].city && (
-              <p className="text-xs text-slate-500 mt-0.5">📍 {deal.founders[0].city}</p>
+              <p className="text-xs text-slate-500">📍 {deal.founders[0].city}</p>
             )}
-          </>
+            {deal.founders[0].investmentTrack && (
+              <div className="text-xs text-slate-400 space-y-0.5">
+                {deal.founders[0].investmentTrack.exits > 0 && (
+                  <p>🎯 {deal.founders[0].investmentTrack.exits} exits</p>
+                )}
+                {deal.founders[0].investmentTrack.averageROI && (
+                  <p className={deal.founders[0].investmentTrack.averageROI >= 1000 ? 'text-green-400 font-semibold' : ''}>
+                    📈 {deal.founders[0].investmentTrack.averageROI.toLocaleString()}% ROI
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
         )}
       </div>
       <button

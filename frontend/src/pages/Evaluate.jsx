@@ -16,6 +16,24 @@ const US_CITIES = [
 // Founder titles - varied and realistic
 const FOUNDER_TITLES = ['CEO', 'CTO', 'CFO', 'Founder', 'Chairman', 'President', 'VP Engineering', 'VP Product', 'VC Manager', 'Partner'];
 
+// Generate realistic ROI with some normal (100-300%) and some extreme (5000%+)
+const generateRealisticROI = () => {
+  const random = Math.random();
+  if (random < 0.1) {
+    // 10% chance of extreme outlier (5000%+)
+    return Math.floor(Math.random() * 15000) + 5000;
+  } else if (random < 0.25) {
+    // 15% chance of very good (1000-5000%)
+    return Math.floor(Math.random() * 4000) + 1000;
+  } else if (random < 0.6) {
+    // 35% chance of good (300-1000%)
+    return Math.floor(Math.random() * 700) + 300;
+  } else {
+    // 40% chance of normal (50-300%)
+    return Math.floor(Math.random() * 250) + 50;
+  }
+};
+
 // Generate fake founder data with city information
 const generateFakeFounders = (dealId) => {
   const founderCount = Math.floor(Math.random() * 4) + 1; // 1-4 founders
@@ -34,6 +52,11 @@ const generateFakeFounders = (dealId) => {
       name: `${firstName} ${lastName}`,
       title: title,
       city: `${city.name}, ${city.state}`,
+      founderScore: Math.floor(Math.random() * 100) + 1, // 1-100
+      investmentTrack: {
+        exits: Math.floor(Math.random() * 8), // 0-7 exits
+        averageROI: generateRealisticROI()
+      },
       twitter: `https://twitter.com/${firstName.toLowerCase()}${lastName.toLowerCase()}`,
       linkedin: `https://linkedin.com/in/${firstName.toLowerCase()}-${lastName.toLowerCase()}`,
       angellist: `https://angel.co/${firstName.toLowerCase()}${lastName.toLowerCase()}`
