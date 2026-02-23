@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 
-export function SectorHeatmap({ trends }) {
+export function SectorHeatmap({ trends, deals }) {
   const [hoveredCell, setHoveredCell] = useState(null);
 
   const sectors = ['AI/ML', 'Fintech', 'Climate', 'Healthcare', 'Cybersecurity', 'Web3', 'SaaS', 'EdTech', 'Biotech', 'Enterprise'];
@@ -35,7 +35,8 @@ export function SectorHeatmap({ trends }) {
     trends?.forEach(trend => {
       const categoryKey = trend.category?.toLowerCase() || 'unknown';
       const sector = categoryMapping[categoryKey] || 'Unknown';
-      const momentum = Math.min(100, trend.momentum_score * 2);
+      // Use score field (1-100 scale) or fall back to momentum_score
+      const momentum = trend.score || Math.min(100, (trend.momentum_score || 0) * 2);
 
       if (sectors.includes(sector)) {
         let bucket;
@@ -118,7 +119,7 @@ export function SectorHeatmap({ trends }) {
           <div className="space-y-1 max-h-32 overflow-y-auto">
             {hoveredCell.trends.map(trend => (
               <p key={trend.id} className="text-xs text-slate-400">
-                • {trend.name} (Score: {Math.min(100, trend.momentum_score * 2).toFixed(0)})
+                • {trend.name} (Score: {trend.score || Math.min(100, (trend.momentum_score || 0) * 2)})
               </p>
             ))}
           </div>

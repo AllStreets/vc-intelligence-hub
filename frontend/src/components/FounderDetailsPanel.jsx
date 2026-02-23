@@ -1,5 +1,50 @@
 import { useState, useEffect } from 'react';
 
+// Fake data generators
+const founderSectors = ['AI/ML', 'Fintech', 'Climate', 'Healthcare', 'Cybersecurity', 'Web3', 'SaaS', 'EdTech', 'Biotech', 'Enterprise'];
+const founderCompanies = [
+  'Stripe', 'Figma', 'Notion', 'Discord', 'Canva', 'Vercel', 'Retool', 'Substack', 'Webflow', 'Zapier',
+  'Loom', 'Calendly', 'Plaid', 'Ramp', 'Mercury', 'Brex', 'Rippling', 'Affinity', 'Gong', 'Amplitude',
+  'Datadog', 'Cloudflare', 'Gitlab', 'HashiCorp', 'Snyk', 'JFrog', 'BigCommerce', 'Elastic', 'MongoDB', 'Confluent'
+];
+
+const generateRandomSectors = () => {
+  const count = Math.floor(Math.random() * 2) + 2; // 2-3 sectors
+  const sectors = [];
+  const availableSectors = [...founderSectors];
+  for (let i = 0; i < count; i++) {
+    const idx = Math.floor(Math.random() * availableSectors.length);
+    sectors.push(availableSectors[idx]);
+    availableSectors.splice(idx, 1);
+  }
+  return sectors;
+};
+
+const generateRandomCompanies = () => {
+  const count = Math.floor(Math.random() * 7) + 1; // 1-7 companies
+  const companies = [];
+  const available = [...founderCompanies];
+  for (let i = 0; i < count; i++) {
+    const idx = Math.floor(Math.random() * available.length);
+    companies.push(available[idx]);
+    available.splice(idx, 1);
+  }
+  return companies;
+};
+
+const generateRandomSocial = () => {
+  const firstNames = ['alice', 'bob', 'charlie', 'diana', 'eve', 'frank', 'grace', 'henry'];
+  const lastNames = ['chen', 'smith', 'johnson', 'williams', 'brown', 'davis', 'garcia', 'miller'];
+  const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+  const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+
+  return {
+    twitter: `https://twitter.com/${firstName}${lastName}`,
+    linkedin: `https://linkedin.com/in/${firstName}-${lastName}`,
+    angellist: `https://angel.co/${firstName}${lastName}`
+  };
+};
+
 export function FounderDetailsPanel({ founderId, founderData, onClose }) {
   const [founder, setFounder] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -10,9 +55,17 @@ export function FounderDetailsPanel({ founderId, founderData, onClose }) {
       return;
     }
 
-    // If founder data was passed directly from trend, use it
+    // If founder data was passed directly from deals or trends, use it
     if (founderData) {
-      setFounder(founderData);
+      // Populate missing fields with fake data
+      const enrichedFounder = {
+        ...founderData,
+        sectors: founderData.sectors || generateRandomSectors(),
+        social: founderData.social || generateRandomSocial(),
+        pastCompanies: founderData.pastCompanies || generateRandomCompanies(),
+        title: founderData.title || 'Venture Founder'
+      };
+      setFounder(enrichedFounder);
       return;
     }
 

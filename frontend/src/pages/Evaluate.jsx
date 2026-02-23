@@ -1,11 +1,63 @@
 import { useState, useEffect } from 'react';
 import { FounderNetworkGraph } from '../components/FounderNetworkGraph';
 import { SectorHeatmap } from '../components/SectorHeatmap';
-import { fetchTrendsWithCache } from '../services/dataCache';
+import { fetchTrendsWithCache, fetchDealsWithCache, getApiBaseUrl } from '../services/dataCache';
+
+// Build founder network from deals
+const buildFounderNetworkFromDeals = (deals) => {
+  const founderMap = new Map();
+  const edges = [];
+
+  // Collect all founders from deals
+  deals?.forEach((deal, dealIndex) => {
+    deal.founders?.forEach((founder) => {
+      const founderId = founder.id || `founder-${founder.name}`;
+      if (!founderMap.has(founderId)) {
+        founderMap.set(founderId, {
+          data: {
+            id: founderId,
+            label: founder.name || 'Unknown Founder'
+          }
+        });
+      }
+    });
+
+    // Create edges between founders in the same deal
+    if (deal.founders && deal.founders.length > 1) {
+      for (let i = 0; i < deal.founders.length; i++) {
+        for (let j = i + 1; j < deal.founders.length; j++) {
+          const founder1Id = deal.founders[i].id || `founder-${deal.founders[i].name}`;
+          const founder2Id = deal.founders[j].id || `founder-${deal.founders[j].name}`;
+          const edgeId = `edge-${founder1Id}-${founder2Id}`;
+
+          // Only add edge if not already exists
+          if (!edges.find(e => e.data.id === edgeId)) {
+            edges.push({
+              data: {
+                id: edgeId,
+                source: founder1Id,
+                target: founder2Id,
+                strength: 1
+              }
+            });
+          }
+        }
+      }
+    }
+  });
+
+  return {
+    nodes: Array.from(founderMap.values()),
+    edges: edges,
+    founderCount: founderMap.size,
+    connectionCount: edges.length
+  };
+};
 
 export function Evaluate() {
   const [networkData, setNetworkData] = useState(null);
   const [trends, setTrends] = useState([]);
+  const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -18,20 +70,18 @@ export function Evaluate() {
       setLoading(true);
       setError(null);
 
-      // Get the correct base URL for founder network (may differ from API base)
-      const baseUrl = import.meta.env.PROD
-        ? (import.meta.env.VITE_API_URL || 'https://api.example.com')
-        : 'http://localhost:5000';
-
-      // Fetch founder network data
-      const networkResponse = await fetch(`${baseUrl}/api/founder-network`);
-      if (!networkResponse.ok) throw new Error('Failed to fetch founder network');
-      const networkJson = await networkResponse.json();
-      setNetworkData(networkJson);
-
       // Fetch trends for heatmap (use cache)
       const trendsJson = await fetchTrendsWithCache();
       setTrends(trendsJson.trends || []);
+
+      // Fetch deals for heatmap and founder network
+      const dealsJson = await fetchDealsWithCache();
+      const dealsData = dealsJson.deals || [];
+      setDeals(dealsData);
+
+      // Build founder network from deals
+      const founderNetwork = buildFounderNetworkFromDeals(dealsData);
+      setNetworkData(founderNetwork);
     } catch (err) {
       console.error('Error fetching EVALUATE page data:', err);
       setError(err.message);
@@ -67,7 +117,7 @@ export function Evaluate() {
           </div>
 
           <div>
-            <SectorHeatmap trends={trends} />
+            <SectorHeatmap trends={trends} deals={deals} />
           </div>
         </div>
       )}

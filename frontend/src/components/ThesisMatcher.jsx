@@ -152,7 +152,7 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
       ? parseThesis(thesisText)
       : { sectors: [], stages: [], keywords: [], confidence: 0 };
 
-    let score = 1; // Base score (everyone gets at least 1)
+    let score = 15; // Base score - everyone starts here
 
     // HARD FILTER: Sectors (applies to both if they have category info)
     let sectorMatches = false;
@@ -181,14 +181,15 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
           return { percentage: 0, reasons: [], oppType };
         }
         reasons.push(`✓ ${item.funding_type}`);
-        score += 10; // Boost for stage match
+        score += 8; // Boost for stage match
       }
     }
 
-    // MOMENTUM SCORING: 50-60 points for trends
+    // MOMENTUM SCORING: 0-70 points for trends (PRIMARY METRIC)
     if (oppType === OpportunityType.TREND && hasMomentumInfo(item)) {
       const momentum = item.momentum_score || 0;
-      const momentumPoints = Math.min(60, (momentum / 50) * 60);
+      // Scale momentum to 0-70 (assuming momentum_score is 0-50 range)
+      const momentumPoints = Math.min(70, (momentum / 50) * 70);
       score += momentumPoints;
 
       // Show momentum in reasons if significant
@@ -198,16 +199,19 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
       if (thesis.minMomentum > 0 && momentum >= thesis.minMomentum) {
         // Already shown above or will be shown
       }
+    } else if (oppType === OpportunityType.DEAL) {
+      // Deals don't have momentum, give them a baseline boost for visibility
+      score += 15;
     }
 
-    // SECTOR POPULARITY BONUS: 0-15 points
+    // SECTOR POPULARITY BONUS: 0-10 points
     if (itemSector) {
       const popularity = sectorPopularity[itemSector] || 1.0;
-      const popularityBonus = (popularity - 1) * 15;
-      score += Math.max(0, popularityBonus);
+      const popularityBonus = Math.max(0, (popularity - 1) * 10);
+      score += popularityBonus;
     }
 
-    // KEYWORD MATCHING: 0-12 points (optional bonus)
+    // KEYWORD MATCHING: 0-8 points (optional bonus)
     if (parsedThesis.keywords.length > 0) {
       const itemText = (getOpportunityName(item) + ' ' +
                        (item.data?.description || '') + ' ' +
@@ -218,7 +222,7 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
       );
 
       if (keywordMatches.length > 0) {
-        const keywordBonus = Math.min(12, (keywordMatches.length / parsedThesis.keywords.length) * 12);
+        const keywordBonus = Math.min(8, (keywordMatches.length / parsedThesis.keywords.length) * 8);
         score += keywordBonus;
         if (keywordMatches.length > 0) {
           reasons.push(`✓ Keywords: ${keywordMatches.slice(0, 2).join(', ')}`);
@@ -461,7 +465,7 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
           <div className="mt-4 flex justify-center">
             <button
               onClick={() => setDisplayedCount(prev => prev + 20)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold transition-colors"
+              className="px-4 py-2 bg-amber-400 hover:bg-amber-500 text-black rounded font-semibold transition-colors"
             >
               Load More ({results.length - displayedCount} remaining)
             </button>

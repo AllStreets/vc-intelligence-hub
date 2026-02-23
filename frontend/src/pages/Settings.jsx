@@ -228,34 +228,48 @@ export function Settings() {
         <section className="bg-dark-700 rounded-lg border border-dark-600 p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-bold text-white">Investment Thesis Presets</h2>
-            {thesisPresets.length > 0 && (
-              <div className="relative">
-                <button
-                  onClick={() => setShowThesisDropdown(!showThesisDropdown)}
-                  className="flex items-center gap-2 text-sm text-amber-400 hover:text-amber-300 transition-colors"
-                >
-                  View ({thesisPresets.length})
-                  <ChevronDownIcon className={`w-4 h-4 transition-transform ${showThesisDropdown ? 'rotate-180' : ''}`} />
-                </button>
+            <div className="flex items-center gap-4">
+              {thesisPresets.length === 0 ? (
+                <p className="text-slate-400 text-sm">No thesis presets saved yet</p>
+              ) : (
+                <>
+                  <p className="text-slate-400 text-sm">{thesisPresets.length} thesis preset(s) saved</p>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowThesisDropdown(!showThesisDropdown)}
+                      className="flex items-center gap-2 text-sm text-amber-400 hover:text-amber-300 transition-colors"
+                    >
+                      View ({thesisPresets.length})
+                      <ChevronDownIcon className={`w-4 h-4 transition-transform ${showThesisDropdown ? 'rotate-180' : ''}`} />
+                    </button>
 
-                {showThesisDropdown && (
-                  <div className="absolute top-full right-0 mt-2 bg-dark-600 border border-dark-500 rounded-lg shadow-lg z-50 min-w-96 max-h-64 overflow-y-auto">
-                    {thesisPresets.map((thesis) => (
-                      <div key={thesis.id} className="px-4 py-3 border-b border-dark-500 hover:bg-dark-700 transition-colors text-sm">
-                        <p className="text-slate-300 font-medium mb-1">{new Date(thesis.timestamp).toLocaleDateString()} {new Date(thesis.timestamp).toLocaleTimeString()}</p>
-                        <p className="text-slate-400 text-xs line-clamp-2">{thesis.text}</p>
+                    {showThesisDropdown && (
+                      <div className="absolute top-full right-0 mt-2 bg-dark-600 border border-dark-500 rounded-lg shadow-lg z-50 min-w-96 max-h-64 overflow-y-auto">
+                        {thesisPresets.map((thesis) => (
+                          <div key={thesis.id} className="px-4 py-3 border-b border-dark-500 hover:bg-dark-700 transition-colors text-sm">
+                            <p className="text-slate-300 font-medium mb-1">{new Date(thesis.timestamp).toLocaleDateString()} {new Date(thesis.timestamp).toLocaleTimeString()}</p>
+                            <p className="text-slate-400 text-xs line-clamp-2">{thesis.text}</p>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
                   </div>
-                )}
-              </div>
-            )}
+                  <button
+                    onClick={() => {
+                      setThesisPresets([]);
+                      localStorage.removeItem('vc-thesis-presets');
+                    }}
+                    className="text-xs text-red-400 hover:text-red-300 transition-colors"
+                  >
+                    Clear
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
-          {thesisPresets.length === 0 ? (
-            <p className="text-slate-400 text-sm">No thesis presets saved yet. They'll appear here as you save them on the DECIDE page.</p>
-          ) : (
-            <p className="text-slate-400 text-sm">{thesisPresets.length} thesis preset(s) saved</p>
+          {thesisPresets.length > 0 && (
+            <p className="text-slate-400 text-sm">They'll be displayed as you save them on the DECIDE page.</p>
           )}
         </section>
 

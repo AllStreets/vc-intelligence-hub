@@ -45,6 +45,7 @@ export default function TrendsFeed({ trends, selectedTrend, onSelectTrend, onSea
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [watchlist, setWatchlist] = useState([]);
+  const [displayedCount, setDisplayedCount] = useState(20);
 
   useEffect(() => {
     fetchTrends();
@@ -154,7 +155,7 @@ export default function TrendsFeed({ trends, selectedTrend, onSelectTrend, onSea
         </div>
       ) : (
         <div className="space-y-4">
-          {filteredTrends.slice(0, 20).map((trend) => (
+          {filteredTrends.slice(0, displayedCount).map((trend) => (
             <button
               key={trend.id}
               onClick={() => onSelectTrend(trend)}
@@ -207,13 +208,8 @@ export default function TrendsFeed({ trends, selectedTrend, onSelectTrend, onSea
                 </div>
               )}
 
-              {/* Founders and Sources inline */}
+              {/* Sources only - founders hidden but kept for network feature */}
               <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-700">
-                {trend.founders?.map(founder => (
-                  <span key={founder.id} className="text-xs bg-gray-700 px-2 py-1 rounded text-gray-300">
-                    @{founder.name}
-                  </span>
-                ))}
                 <SourceLinks sources={trend.sources} />
               </div>
 
@@ -224,10 +220,15 @@ export default function TrendsFeed({ trends, selectedTrend, onSelectTrend, onSea
             </button>
           ))}
 
-          {filteredTrends.length > 20 && (
-            <p className="text-center text-gray-500 py-4 text-sm">
-              Showing 20 of {filteredTrends.length} trends
-            </p>
+          {displayedCount < filteredTrends.length && (
+            <div className="flex justify-center pt-4">
+              <button
+                onClick={() => setDisplayedCount(prev => prev + 20)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold transition-colors"
+              >
+                Load More ({filteredTrends.length - displayedCount} remaining)
+              </button>
+            </div>
           )}
         </div>
       )}

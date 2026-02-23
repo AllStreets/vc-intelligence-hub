@@ -88,8 +88,8 @@ export const getApiBaseUrl = () => {
   if (import.meta.env.PROD) {
     return import.meta.env.VITE_API_URL || 'https://api.example.com';
   }
-  // In development, use localhost:5000
-  return 'http://localhost:5000';
+  // In development, use localhost:5002
+  return 'http://localhost:5002';
 };
 
 /**
