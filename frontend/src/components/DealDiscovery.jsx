@@ -9,6 +9,7 @@ export default function DealDiscovery({ deals, onSearchSubmit }) {
   const [selectedDealTypes, setSelectedDealTypes] = useState([]);
   const [showFilter, setShowFilter] = useState(false);
   const [deletedDealIds, setDeletedDealIds] = useState([]);
+  const [displayedCount, setDisplayedCount] = useState(30);
 
   const deleteDeal = (dealId) => {
     setDeletedDealIds([...deletedDealIds, dealId]);
@@ -153,7 +154,7 @@ export default function DealDiscovery({ deals, onSearchSubmit }) {
         </div>
       ) : (
         <div className="space-y-4">
-          {filteredDeals.slice(0, 30).map((deal) => (
+          {filteredDeals.slice(0, displayedCount).map((deal) => (
             <div
               key={deal.id}
               className="card hover:border-gray-600 hover:shadow-lg transition-all"
@@ -221,10 +222,15 @@ export default function DealDiscovery({ deals, onSearchSubmit }) {
             </div>
           ))}
 
-          {filteredDeals.length > 30 && (
-            <p className="text-center text-gray-500 py-4 text-sm">
-              Showing 30 of {filteredDeals.length} deals
-            </p>
+          {displayedCount < filteredDeals.length && (
+            <div className="flex justify-center pt-4">
+              <button
+                onClick={() => setDisplayedCount(prev => prev + 30)}
+                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded font-semibold transition-colors"
+              >
+                Load More ({filteredDeals.length - displayedCount} remaining)
+              </button>
+            </div>
           )}
         </div>
       )}

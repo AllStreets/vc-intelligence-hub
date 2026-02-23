@@ -52,6 +52,7 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
   const [results, setResults] = useState([]);
   const [manuallySetSectors, setManuallySetSectors] = useState(false);
   const [manuallySetStages, setManuallySetStages] = useState(false);
+  const [displayedCount, setDisplayedCount] = useState(20);
 
   // Load saved thesis from localStorage on mount
   useEffect(() => {
@@ -137,7 +138,10 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
       ? parseThesis(thesisText)
       : { sectors: [], stages: [], keywords: [], confidence: 0 };
 
+    let score = 5; // Start very low and build up
+
     // HARD FILTER: Sectors (applies to both if they have category info)
+    let sectorMatches = false;
     if (thesis.sectors.length > 0) {
       const itemSector = getOpportunitySector(item);
       // Only filter by sector if item has category (trends do, deals might not)
@@ -145,67 +149,68 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
         if (!thesis.sectors.includes(itemSector)) {
           return { percentage: 0, reasons: [], oppType };
         }
+        sectorMatches = true;
         reasons.push(`✓ ${itemSector}`);
+        score += 15; // Strong boost for sector match
       }
       // If item has no category, don't filter it out by sector
     }
 
     // HARD FILTER: Stages (ONLY for deals)
+    let stageMatches = false;
     if (thesis.stages.length > 0) {
       if (oppType === OpportunityType.DEAL) {
         if (!hasStageInfo(item)) {
           return { percentage: 0, reasons: [], oppType };
         }
-        const stageMatch = thesis.stages.some(stage =>
+        const stageMat = thesis.stages.some(stage =>
           item.funding_type?.includes(stage)
         );
-        if (!stageMatch) {
+        if (!stageMat) {
           return { percentage: 0, reasons: [], oppType };
         }
+        stageMatches = true;
         reasons.push(`✓ ${item.funding_type}`);
+        score += 15; // Strong boost for stage match
       }
       // Trends: Skip stage filter entirely
     }
 
-    // SOFT SCORING: Momentum (ONLY for trends)
-    let matches = 0;
-    let totalCriteria = 0;
-
-    if (thesis.minMomentum > 0 && oppType === OpportunityType.TREND) {
-      if (hasMomentumInfo(item)) {
-        // Treat momentum as a bonus criterion - only adds if it matches
-        const momentum = item.momentum_score || 0;
-        if (momentum >= thesis.minMomentum) {
-          totalCriteria++;
-          matches++;
-          reasons.push(`✓ Momentum: ${momentum.toFixed(0)}`);
-        }
-        // If momentum doesn't match, don't penalize - just don't add it as a criterion
+    // SCORING: Momentum (continuous scale for trends)
+    if (oppType === OpportunityType.TREND && hasMomentumInfo(item)) {
+      const momentum = item.momentum_score || 0;
+      // Add 0-35 points based on momentum value
+      const momentumBonus = Math.min(35, (momentum / 50) * 35);
+      score += momentumBonus;
+      if (thesis.minMomentum > 0 && momentum >= thesis.minMomentum) {
+        reasons.push(`✓ Momentum: ${momentum.toFixed(0)}`);
       }
     }
 
-    // SOFT SCORING: Founder quality (for trends)
+    // SCORING: Founder quality (for trends)
     if ((thesis.minExits > 0 || thesis.minROI > 0) && item.founders?.length > 0) {
       const topFounder = item.founders[0];
       if (topFounder.investmentTrack) {
+        let founderScore = 0;
         if (thesis.minExits > 0) {
-          totalCriteria++;
-          if (topFounder.investmentTrack.exits >= thesis.minExits) {
-            matches++;
-            reasons.push(`✓ ${topFounder.investmentTrack.exits} exits`);
+          const exits = topFounder.investmentTrack.exits || 0;
+          founderScore += Math.min(10, (exits / 3) * 10);
+          if (exits >= thesis.minExits) {
+            reasons.push(`✓ ${exits} exits`);
           }
         }
         if (thesis.minROI > 0) {
-          totalCriteria++;
-          if (topFounder.investmentTrack.averageROI >= thesis.minROI) {
-            matches++;
-            reasons.push(`✓ ${topFounder.investmentTrack.averageROI}% ROI`);
+          const roi = topFounder.investmentTrack.averageROI || 0;
+          founderScore += Math.min(10, (roi / 300) * 10);
+          if (roi >= thesis.minROI) {
+            reasons.push(`✓ ${roi}% ROI`);
           }
         }
+        score += founderScore;
       }
     }
 
-    // SOFT SCORING: Keyword matching (optional - doesn't penalize if no match)
+    // SCORING: Keyword matching (optional bonus)
     if (parsedThesis.keywords.length > 0) {
       const itemText = (getOpportunityName(item) + ' ' +
                        (item.data?.description || '') + ' ' +
@@ -216,22 +221,14 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
       );
 
       if (keywordMatches.length > 0) {
-        totalCriteria++;
-        matches++;
+        const keywordBonus = Math.min(25, (keywordMatches.length / parsedThesis.keywords.length) * 25);
+        score += keywordBonus;
         reasons.push(`✓ Keywords: ${keywordMatches.slice(0, 2).join(', ')}`);
       }
     }
 
-    // Handle no-criteria case
-    if (thesis.sectors.length === 0 && thesis.stages.length === 0 &&
-        thesis.minMomentum === 0 && thesis.minExits === 0 && thesis.minROI === 0) {
-      return { percentage: 80, reasons: ['No filters applied'], oppType };
-    }
-
-    // Calculate percentage
-    const percentage = totalCriteria > 0
-      ? Math.round((matches / totalCriteria) * 100)
-      : (reasons.length > 0 ? 80 : 0);
+    // Clamp score between 1-100
+    const percentage = Math.max(1, Math.min(100, Math.round(score)));
 
     return { percentage, reasons: reasons.slice(0, 3), oppType };
   };
@@ -430,10 +427,10 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
 
       {/* Results */}
       <div className="bg-dark-700 rounded-lg border border-dark-600 p-6">
-        <h3 className="text-lg font-bold text-white mb-4">Matching Opportunities ({results.filter(r => r.match.percentage >= 60).length})</h3>
+        <h3 className="text-lg font-bold text-white mb-4">Matching Opportunities (Showing {Math.min(displayedCount, results.length)} of {results.length})</h3>
 
         <div className="space-y-2 max-h-96 overflow-y-auto">
-          {results.slice(0, 20).map(item => (
+          {results.slice(0, displayedCount).map(item => (
             <a
               key={item.id}
               href={item.sources?.[0]?.url || item.url || '#'}
@@ -460,6 +457,17 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
             </a>
           ))}
         </div>
+
+        {displayedCount < results.length && (
+          <div className="mt-4 flex justify-center">
+            <button
+              onClick={() => setDisplayedCount(prev => prev + 20)}
+              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded font-semibold transition-colors"
+            >
+              Load More ({results.length - displayedCount} remaining)
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

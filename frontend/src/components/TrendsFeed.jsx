@@ -1,6 +1,5 @@
 import { MomentumIndicator } from './MomentumIndicator';
 import { SearchFilter } from './SearchFilter';
-import { FounderDetailsPanel } from './FounderDetailsPanel';
 import { SourceLinks } from './SourceLinks';
 import { BookmarkIcon } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkSolidIcon } from '@heroicons/react/24/solid';
@@ -45,7 +44,6 @@ export default function TrendsFeed({ trends, selectedTrend, onSelectTrend, onSea
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategories, setSelectedCategories] = useState([]);
-  const [selectedFounder, setSelectedFounder] = useState(null);
   const [watchlist, setWatchlist] = useState([]);
 
   useEffect(() => {
@@ -209,23 +207,15 @@ export default function TrendsFeed({ trends, selectedTrend, onSelectTrend, onSea
                 </div>
               )}
 
-              {/* Founders section */}
-              <div className="mt-3">
-                <p className="text-xs text-slate-400 mb-1">Founders:</p>
-                <div className="flex flex-wrap gap-1">
-                  {trend.founders?.map(founder => (
-                    <button
-                      key={founder.id}
-                      onClick={() => setSelectedFounder(founder)}
-                      className="text-sm text-blue-400 hover:text-blue-300 hover:underline"
-                    >
-                      @{founder.name}
-                    </button>
-                  ))}
-                </div>
+              {/* Founders and Sources inline */}
+              <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-700">
+                {trend.founders?.map(founder => (
+                  <span key={founder.id} className="text-xs bg-gray-700 px-2 py-1 rounded text-gray-300">
+                    @{founder.name}
+                  </span>
+                ))}
+                <SourceLinks sources={trend.sources} />
               </div>
-
-              <SourceLinks sources={trend.sources} />
 
               <div className="flex justify-between items-center mt-3">
                 <span className="text-sm text-slate-400">Score: {trend.score}/100</span>
@@ -241,12 +231,6 @@ export default function TrendsFeed({ trends, selectedTrend, onSelectTrend, onSea
           )}
         </div>
       )}
-
-      <FounderDetailsPanel
-        founderId={selectedFounder?.id}
-        founderData={selectedFounder}
-        onClose={() => setSelectedFounder(null)}
-      />
     </div>
   );
 }
