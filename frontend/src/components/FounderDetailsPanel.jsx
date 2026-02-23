@@ -121,6 +121,9 @@ export function FounderDetailsPanel({ founderId, founderData, onClose }) {
           <div className="text-center">
             <h2 className="text-2xl font-bold text-white">{founder.name}</h2>
             <p className="text-slate-400">{founder.title}</p>
+            {founder.city && (
+              <p className="text-sm text-slate-500 mt-1">📍 Based out of {founder.city}</p>
+            )}
           </div>
 
           {/* Sectors */}

@@ -11,6 +11,41 @@ const pipelineStages = [
   { id: 'ready_to_invest', label: 'Ready to Invest', color: 'green' }
 ];
 
+// Cities for founder generation
+const US_CITIES = [
+  { name: 'Chicago', state: 'IL' },
+  { name: 'San Francisco', state: 'CA' },
+  { name: 'Cary', state: 'NC' },
+  { name: 'Seattle', state: 'WA' },
+  { name: 'New York', state: 'NY' },
+  { name: 'Miami', state: 'FL' }
+];
+
+// Generate fake founder data with city information
+const generateFakeFounders = (dealId) => {
+  const founderCount = Math.floor(Math.random() * 4) + 1; // 1-4 founders
+  const firstNames = ['Alex', 'Jordan', 'Taylor', 'Morgan', 'Casey', 'Riley', 'Avery', 'Quinn', 'Drew', 'Blake', 'Sage', 'Cameron'];
+  const lastNames = ['Chen', 'Smith', 'Johnson', 'Williams', 'Brown', 'Davis', 'Garcia', 'Miller', 'Wilson', 'Moore', 'Taylor', 'Anderson'];
+
+  const founders = [];
+  for (let i = 0; i < founderCount; i++) {
+    const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+    const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+    const city = US_CITIES[Math.floor(Math.random() * US_CITIES.length)];
+
+    founders.push({
+      id: `founder-${dealId}-${i}`,
+      name: `${firstName} ${lastName}`,
+      city: `${city.name}, ${city.state}`,
+      twitter: `https://twitter.com/${firstName.toLowerCase()}${lastName.toLowerCase()}`,
+      linkedin: `https://linkedin.com/in/${firstName.toLowerCase()}-${lastName.toLowerCase()}`,
+      angellist: `https://angel.co/${firstName.toLowerCase()}${lastName.toLowerCase()}`
+    });
+  }
+
+  return founders;
+};
+
 function DraggableDealCard({ deal, stageId, onDelete }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: deal.id,
@@ -30,7 +65,12 @@ function DraggableDealCard({ deal, stageId, onDelete }) {
         <p className="font-semibold text-white text-sm">{deal.company_name}</p>
         <p className="text-xs text-slate-400 mt-1">{deal.funding_type}</p>
         {deal.founders?.length > 0 && (
-          <p className="text-xs text-amber-400 mt-1">👤 {deal.founders[0].name}</p>
+          <>
+            <p className="text-xs text-amber-400 mt-1">👤 {deal.founders[0].name}</p>
+            {deal.founders[0].city && (
+              <p className="text-xs text-slate-500 mt-0.5">📍 {deal.founders[0].city}</p>
+            )}
+          </>
         )}
       </div>
       <button
@@ -100,10 +140,35 @@ const DealPipeline = memo(function DealPipeline() {
     return null;
   };
 
+  const isHighQualityDeal = (deal) => {
+    // Filter out low-quality news-based "deals"
+    // Real deals should have meaningful company names and funding types
+    const companyName = deal.company_name || '';
+
+    // Reject single-word company names or generic titles (likely extracted from news headlines)
+    if (companyName.length < 3) return false;
+    if (/^(The|What|Can|Where|How|Why|When|Who|Which|Why|This|That|It|Is|Are|Be|Will|Would|Could|Should|Has|Have|Does|Did|Do|Being)$/i.test(companyName)) return false;
+
+    // Reject generic funding types (should be specific like "Series A", not just "Funding")
+    const fundingType = deal.funding_type || '';
+    if (fundingType === 'Funding' || fundingType === 'Investment' || fundingType === '') return false;
+
+    return true;
+  };
+
   const fetchDeals = async () => {
     try {
       const dealsData = await fetchDealsWithCache();
-      const data = dealsData.deals || [];
+      let data = dealsData.deals || [];
+
+      // Filter to high-quality deals only
+      data = data.filter(isHighQualityDeal);
+
+      // Enrich deals with fake founder data if missing
+      data = data.map(deal => ({
+        ...deal,
+        founders: deal.founders && deal.founders.length > 0 ? deal.founders : generateFakeFounders(deal.id)
+      }));
 
       // Initialize pipeline by status
       const staged = {};
