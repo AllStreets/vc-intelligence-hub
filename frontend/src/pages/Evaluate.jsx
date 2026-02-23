@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FounderNetworkGraph } from '../components/FounderNetworkGraph';
+import { FounderNetworkMap } from '../components/FounderNetworkMap';
 import { SectorHeatmap } from '../components/SectorHeatmap';
 import { fetchTrendsWithCache, fetchDealsWithCache, getApiBaseUrl } from '../services/dataCache';
 
@@ -113,7 +113,7 @@ export function Evaluate() {
             <p className="text-sm text-slate-400 mb-4">
               {networkData?.founderCount || 0} founders, {networkData?.connectionCount || 0} connections
             </p>
-            <FounderNetworkGraph data={networkData} />
+            <FounderNetworkMap data={networkData} />
           </div>
 
           <div>
