@@ -12,6 +12,7 @@ export function FounderNetworkMap({ data }) {
   const [founders, setFounders] = useState([]);
   const [selectedFounder, setSelectedFounder] = useState(null);
   const [draggingFounderId, setDraggingFounderId] = useState(null);
+  const draggedPositions = useRef({});  // Track {founderId: {lng, lat}} for dragged dots
 
   // Reset highlight function for use in onClose
   const handleResetHighlight = useCallback(() => {
@@ -232,9 +233,107 @@ export function FounderNetworkMap({ data }) {
       map.current.on('mouseleave', 'founder-dots', () => {
         map.current.getCanvas().style.cursor = '';
       });
+
+      // Drag start listener
+      map.current.on('mousedown', 'founder-dots', (e) => {
+        if (e.features && e.features.length > 0) {
+          const founderId = e.features[0].properties.founderId;
+          console.log('Drag started for founder:', founderId);
+
+          // Set dragging flag and initial position
+          setDraggingFounderId(founderId);
+
+          // Prevent map from panning during drag
+          e.preventDefault();
+        }
+      });
+
+      // Drag move listener
+      map.current.on('mousemove', (e) => {
+        if (!draggingFounderId) return;
+
+        // Update dragged position for this founder
+        draggedPositions.current[draggingFounderId] = {
+          lng: e.lngLat.lng,
+          lat: e.lngLat.lat
+        };
+
+        // Update the founder-dots GeoJSON with new position
+        const updatedGeometry = {
+          type: 'FeatureCollection',
+          features: positionedFounders.map(f => {
+            const dragged = draggedPositions.current[f.founderId];
+            return {
+              type: 'Feature',
+              id: f.founderId,
+              geometry: {
+                type: 'Point',
+                coordinates: dragged ? [dragged.lng, dragged.lat] : [f.lng, f.lat]
+              },
+              properties: {
+                founderId: f.founderId,
+                name: f.name,
+                city: f.city,
+                cityLat: f.cityLat,
+                cityLng: f.cityLng
+              }
+            };
+          })
+        };
+
+        // Update the source to show new positions
+        if (map.current.getSource('founders')) {
+          map.current.getSource('founders').setData(updatedGeometry);
+        }
+
+        // Update connection lines GeoJSON to reflect new positions
+        const updatedConnections = connections.map((conn, idx) => {
+          const founder1 = positionedFounders.find(f => f.founderId === conn.from);
+          const founder2 = positionedFounders.find(f => f.founderId === conn.to);
+
+          if (!founder1 || !founder2) return null;
+
+          const pos1 = draggedPositions.current[conn.from] || {lng: founder1.lng, lat: founder1.lat};
+          const pos2 = draggedPositions.current[conn.to] || {lng: founder2.lng, lat: founder2.lat};
+
+          return {
+            type: 'Feature',
+            id: `conn-${idx}`,
+            geometry: {
+              type: 'LineString',
+              coordinates: [[pos1.lng, pos1.lat], [pos2.lng, pos2.lat]]
+            },
+            properties: {
+              id: `conn-${idx}`,
+              from: conn.from,
+              to: conn.to
+            }
+          };
+        }).filter(f => f !== null);
+
+        const connectionGeoJSON = {
+          type: 'FeatureCollection',
+          features: updatedConnections
+        };
+
+        if (map.current.getSource('connections')) {
+          map.current.getSource('connections').setData(connectionGeoJSON);
+        }
+      });
+
+      // Drag end listener
+      map.current.on('mouseup', () => {
+        if (draggingFounderId) {
+          console.log('Drag ended for founder:', draggingFounderId);
+          setDraggingFounderId(null);
+        }
+      });
     });
 
     return () => {
+      // Reset all dragged positions when leaving this component
+      draggedPositions.current = {};
+
       if (map.current) {
         map.current.remove();
         map.current = null;
