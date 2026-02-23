@@ -4,21 +4,47 @@ import { FounderDetailsPanel } from './FounderDetailsPanel';
 
 const dealTypeCategories = ['Funding', 'Investment', 'Funding Round', 'Seed/Series A', 'Series B', 'Series C', 'IPO', 'Acquisition'];
 
-// Generate fake founder data for deals (one per deal, with score 1-99)
-const generateFakeFounders = (deals) => {
-  const founderNames = ['Alice Chen', 'Marcus Johnson', 'Sarah Williams', 'James Park', 'Elena Rodriguez', 'David Kumar', 'Lisa Zhang', 'Christopher Brown', 'Michelle Garcia', 'Ahmed Hassan'];
+// Cities for founder generation (same as DealPipeline)
+const US_CITIES = [
+  { name: 'Chicago', state: 'IL' },
+  { name: 'San Francisco', state: 'CA' },
+  { name: 'Cary', state: 'NC' },
+  { name: 'Seattle', state: 'WA' },
+  { name: 'New York', state: 'NY' },
+  { name: 'Miami', state: 'FL' }
+];
 
-  return deals.map((deal, index) => ({
+// Founder titles - varied and realistic
+const FOUNDER_TITLES = ['CEO', 'CTO', 'CFO', 'Founder', 'Chairman', 'President', 'VP Engineering', 'VP Product', 'VC Manager', 'Partner'];
+
+// Generate fake founder data with city information (same as DealPipeline)
+const generateFakeFounders = (deals) => {
+  const firstNames = ['Alex', 'Jordan', 'Taylor', 'Morgan', 'Casey', 'Riley', 'Avery', 'Quinn', 'Drew', 'Blake', 'Sage', 'Cameron'];
+  const lastNames = ['Chen', 'Smith', 'Johnson', 'Williams', 'Brown', 'Davis', 'Garcia', 'Miller', 'Wilson', 'Moore', 'Taylor', 'Anderson'];
+
+  return deals.map((deal) => ({
     ...deal,
-    founders: deal.founders || [{
-      id: `founder-${deal.id}`,
-      name: founderNames[index % founderNames.length],
-      founderScore: Math.floor(Math.random() * 99) + 1, // 1-99
-      investmentTrack: {
-        exits: Math.floor(Math.random() * 5),
-        averageROI: Math.floor(Math.random() * 300)
+    founders: deal.founders || (() => {
+      const founderCount = Math.floor(Math.random() * 4) + 1; // 1-4 founders
+      const founders = [];
+      for (let i = 0; i < founderCount; i++) {
+        const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+        const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+        const city = US_CITIES[Math.floor(Math.random() * US_CITIES.length)];
+        const title = FOUNDER_TITLES[Math.floor(Math.random() * FOUNDER_TITLES.length)];
+
+        founders.push({
+          id: `founder-${deal.id}-${i}`,
+          name: `${firstName} ${lastName}`,
+          title: title,
+          city: `${city.name}, ${city.state}`,
+          twitter: `https://twitter.com/${firstName.toLowerCase()}${lastName.toLowerCase()}`,
+          linkedin: `https://linkedin.com/in/${firstName.toLowerCase()}-${lastName.toLowerCase()}`,
+          angellist: `https://angel.co/${firstName.toLowerCase()}${lastName.toLowerCase()}`
+        });
       }
-    }]
+      return founders;
+    })()
   }));
 };
 
@@ -251,18 +277,23 @@ export default function DealDiscovery({ deals, onSearchSubmit }) {
 
               {/* Founders section */}
               {deal.founders && deal.founders.length > 0 && (
-                <div className="mt-2 text-xs text-gray-400">
-                  <span>{deal.founders.length === 1 ? 'Founder:' : 'Founders:'}</span>
+                <div className="mt-3 space-y-1 text-xs">
                   {deal.founders.map((founder, idx) => (
-                    <span key={founder.id}>
-                      {idx > 0 && ', '}
-                      <button
-                        onClick={() => setSelectedFounder(founder)}
-                        className="text-blue-400 hover:text-blue-300 hover:underline ml-1"
-                      >
-                        {founder.name}
-                      </button>
-                    </span>
+                    <button
+                      key={founder.id}
+                      onClick={() => setSelectedFounder(founder)}
+                      className="block w-full text-left p-2 rounded hover:bg-slate-700 transition-colors"
+                    >
+                      <div className="text-blue-400 hover:text-blue-300 font-semibold">
+                        👤 {founder.name}
+                      </div>
+                      {founder.title && (
+                        <div className="text-amber-300 mt-0.5">{founder.title}</div>
+                      )}
+                      {founder.city && (
+                        <div className="text-gray-400 mt-0.5">📍 {founder.city}</div>
+                      )}
+                    </button>
                   ))}
                 </div>
               )}
