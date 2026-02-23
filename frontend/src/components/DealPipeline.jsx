@@ -1,5 +1,5 @@
 import { useState, useEffect, memo } from 'react';
-import { DndContext, useDraggable } from '@dnd-kit/core';
+import { DndContext, useDraggable, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { DroppableArea } from './DroppableArea';
 import { XMarkIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { fetchDealsWithCache, getApiBaseUrl } from '../services/dataCache';
@@ -58,6 +58,13 @@ const DealPipeline = memo(function DealPipeline() {
     status: 'prospecting',
     founders: ''
   });
+
+  // Set up drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      distance: 8, // 8px threshold before drag starts
+    })
+  );
 
   useEffect(() => {
     fetchDeals();
@@ -123,13 +130,26 @@ const DealPipeline = memo(function DealPipeline() {
   const handleDragEnd = async (event) => {
     const { active, over } = event;
 
-    if (!over) return;
+    if (!over) {
+      console.debug('No drop target found');
+      return;
+    }
 
     const dealId = active.id;
     const newStage = over.id;
     const oldStage = active.data?.stageId;
 
-    if (oldStage === newStage) return; // No change
+    console.debug('Drag ended:', { dealId, oldStage, newStage });
+
+    if (oldStage === newStage) {
+      console.debug('Same stage, no change');
+      return;
+    }
+
+    if (!oldStage) {
+      console.error('Old stage not found in active.data');
+      return;
+    }
 
     // Update local state
     const updatedPipeline = { ...pipeline };
@@ -155,6 +175,8 @@ const DealPipeline = memo(function DealPipeline() {
       } catch (error) {
         console.error('Error updating deal status:', error);
       }
+    } else {
+      console.error('Moved deal not found in old stage', { dealId, oldStage, deals: updatedPipeline[oldStage] });
     }
   };
 
@@ -242,7 +264,7 @@ const DealPipeline = memo(function DealPipeline() {
         </button>
       </div>
 
-      <DndContext onDragEnd={handleDragEnd}>
+      <DndContext onDragEnd={handleDragEnd} sensors={sensors}>
         <div className="grid grid-cols-4 gap-4">
           {pipelineStages.map(stage => (
             <div key={stage.id} className="bg-dark-700 rounded-lg border border-dark-600 p-4">
