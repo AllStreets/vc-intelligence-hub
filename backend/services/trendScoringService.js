@@ -37,12 +37,14 @@ export class TrendScoringService {
   calculateMomentumScore(trend) {
     let score = 0;
 
-    // Mention velocity (0-30 pts)
-    const velocityScore = Math.min(trend.mention_count / 100, 30);
+    // Mention velocity (0-30 pts) - with boost for low mention counts
+    // Single mention = 15 pts baseline (to ensure decent distribution)
+    const velocityScore = Math.min(15 + (trend.mention_count || 1) * 3, 30);
     score += velocityScore;
 
-    // Source diversity (0-20 pts) - reward if mentioned in multiple sources
-    const sourceDiversity = trend.sources ? Math.min(trend.sources.length * 4, 20) : 0;
+    // Source diversity (0-25 pts) - reward if mentioned in multiple sources
+    // Single source = 10 pts baseline, then +5 per additional source
+    const sourceDiversity = Math.min(10 + (trend.sources ? trend.sources.length * 5 : 0), 25);
     score += sourceDiversity;
 
     // Funding signals (0-25 pts) - check for Series A/B/C mentions
@@ -64,13 +66,14 @@ export class TrendScoringService {
     if (!trend.data || typeof trend.data !== 'object') return 0;
 
     const text = JSON.stringify(trend.data).toLowerCase();
-    let score = 0;
+    let score = 5; // Base score for any trend (vs 0 before)
 
     if (text.includes('series a') || text.includes('seed')) score += 8;
     if (text.includes('series b')) score += 12;
-    if (text.includes('series c')) score += 15;
+    if (text.includes('series c') || text.includes('series c+')) score += 15;
     if (text.includes('acquisition')) score += 20;
     if (text.includes('ipo')) score += 25;
+    if (text.includes('funding') || text.includes('raised')) score += 3;
 
     return Math.min(score, 25);
   }
