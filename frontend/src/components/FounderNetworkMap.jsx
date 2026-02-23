@@ -92,7 +92,7 @@ export function FounderNetworkMap({ data }) {
       console.log('Built connections GeoJSON with', connectionGeoJSON.features.length, 'lines');
 
       // Add connections source (must be added after founders source)
-      if (connectionGeoJSON.features.length > 0) {
+      if (connectionGeoJSON?.features?.length > 0) {
         map.current.addSource('connections', {
           type: 'geojson',
           data: connectionGeoJSON
@@ -122,7 +122,7 @@ export function FounderNetworkMap({ data }) {
         map.current = null;
       }
     };
-  }, [data?.nodes]);
+  }, [data]);
 
   // Empty state
   if (!data || !data.nodes || data.nodes.length === 0) {
