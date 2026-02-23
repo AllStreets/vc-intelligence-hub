@@ -127,6 +127,22 @@ export function FounderDetailsPanel({ founderId, founderData, onClose }) {
             </ul>
           </div>
 
+          {/* Founder Score */}
+          {founder.founderScore && (
+            <div>
+              <h3 className="text-sm font-semibold text-slate-300 mb-2">Founder Score</h3>
+              <div className="flex items-center gap-3">
+                <div className="text-3xl font-bold text-blue-400">{founder.founderScore}</div>
+                <div className="w-full bg-slate-700 rounded-full h-2">
+                  <div
+                    className="bg-blue-500 h-2 rounded-full transition-all"
+                    style={{ width: `${(founder.founderScore / 99) * 100}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Investment track record */}
           {founder.investmentTrack && (
             <div>

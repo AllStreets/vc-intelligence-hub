@@ -130,6 +130,20 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
   const allSectors = ['AI/ML', 'Fintech', 'Climate', 'Healthcare', 'Cybersecurity', 'Web3', 'SaaS', 'EdTech', 'Biotech', 'Enterprise'];
   const allStages = ['Seed', 'Series A', 'Series B', 'Series C', 'IPO'];
 
+  // Sector popularity weighting
+  const sectorPopularity = {
+    'AI/ML': 1.15,         // Very hot
+    'Fintech': 1.10,       // Hot
+    'Climate': 1.05,       // Warm
+    'Healthcare': 1.05,    // Warm
+    'Cybersecurity': 1.08, // Hot
+    'Web3': 0.90,          // Cool
+    'SaaS': 1.02,          // Normal
+    'EdTech': 0.95,        // Cool
+    'Biotech': 1.03,       // Normal
+    'Enterprise': 0.98     // Normal
+  };
+
   // Score trends/deals against thesis
   const scoreOpportunity = (item) => {
     const reasons = [];
@@ -138,79 +152,62 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
       ? parseThesis(thesisText)
       : { sectors: [], stages: [], keywords: [], confidence: 0 };
 
-    let score = 5; // Start very low and build up
+    let score = 1; // Base score (everyone gets at least 1)
 
     // HARD FILTER: Sectors (applies to both if they have category info)
     let sectorMatches = false;
+    let itemSector = null;
     if (thesis.sectors.length > 0) {
-      const itemSector = getOpportunitySector(item);
-      // Only filter by sector if item has category (trends do, deals might not)
+      itemSector = getOpportunitySector(item);
       if (itemSector) {
         if (!thesis.sectors.includes(itemSector)) {
           return { percentage: 0, reasons: [], oppType };
         }
         sectorMatches = true;
         reasons.push(`✓ ${itemSector}`);
-        score += 15; // Strong boost for sector match
       }
-      // If item has no category, don't filter it out by sector
     }
 
     // HARD FILTER: Stages (ONLY for deals)
-    let stageMatches = false;
     if (thesis.stages.length > 0) {
       if (oppType === OpportunityType.DEAL) {
         if (!hasStageInfo(item)) {
           return { percentage: 0, reasons: [], oppType };
         }
-        const stageMat = thesis.stages.some(stage =>
+        const stageMatch = thesis.stages.some(stage =>
           item.funding_type?.includes(stage)
         );
-        if (!stageMat) {
+        if (!stageMatch) {
           return { percentage: 0, reasons: [], oppType };
         }
-        stageMatches = true;
         reasons.push(`✓ ${item.funding_type}`);
-        score += 15; // Strong boost for stage match
+        score += 10; // Boost for stage match
       }
-      // Trends: Skip stage filter entirely
     }
 
-    // SCORING: Momentum (continuous scale for trends)
+    // MOMENTUM SCORING: 50-60 points for trends
     if (oppType === OpportunityType.TREND && hasMomentumInfo(item)) {
       const momentum = item.momentum_score || 0;
-      // Add 0-35 points based on momentum value
-      const momentumBonus = Math.min(35, (momentum / 50) * 35);
-      score += momentumBonus;
+      const momentumPoints = Math.min(60, (momentum / 50) * 60);
+      score += momentumPoints;
+
+      // Show momentum in reasons if significant
+      if (momentum > 30) {
+        reasons.push(`⚡ Momentum: ${Math.round(momentum)}`);
+      }
       if (thesis.minMomentum > 0 && momentum >= thesis.minMomentum) {
-        reasons.push(`✓ Momentum: ${momentum.toFixed(0)}`);
+        // Already shown above or will be shown
       }
     }
 
-    // SCORING: Founder quality (for trends)
-    if ((thesis.minExits > 0 || thesis.minROI > 0) && item.founders?.length > 0) {
-      const topFounder = item.founders[0];
-      if (topFounder.investmentTrack) {
-        let founderScore = 0;
-        if (thesis.minExits > 0) {
-          const exits = topFounder.investmentTrack.exits || 0;
-          founderScore += Math.min(10, (exits / 3) * 10);
-          if (exits >= thesis.minExits) {
-            reasons.push(`✓ ${exits} exits`);
-          }
-        }
-        if (thesis.minROI > 0) {
-          const roi = topFounder.investmentTrack.averageROI || 0;
-          founderScore += Math.min(10, (roi / 300) * 10);
-          if (roi >= thesis.minROI) {
-            reasons.push(`✓ ${roi}% ROI`);
-          }
-        }
-        score += founderScore;
-      }
+    // SECTOR POPULARITY BONUS: 0-15 points
+    if (itemSector) {
+      const popularity = sectorPopularity[itemSector] || 1.0;
+      const popularityBonus = (popularity - 1) * 15;
+      score += Math.max(0, popularityBonus);
     }
 
-    // SCORING: Keyword matching (optional bonus)
+    // KEYWORD MATCHING: 0-12 points (optional bonus)
     if (parsedThesis.keywords.length > 0) {
       const itemText = (getOpportunityName(item) + ' ' +
                        (item.data?.description || '') + ' ' +
@@ -221,14 +218,16 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
       );
 
       if (keywordMatches.length > 0) {
-        const keywordBonus = Math.min(25, (keywordMatches.length / parsedThesis.keywords.length) * 25);
+        const keywordBonus = Math.min(12, (keywordMatches.length / parsedThesis.keywords.length) * 12);
         score += keywordBonus;
-        reasons.push(`✓ Keywords: ${keywordMatches.slice(0, 2).join(', ')}`);
+        if (keywordMatches.length > 0) {
+          reasons.push(`✓ Keywords: ${keywordMatches.slice(0, 2).join(', ')}`);
+        }
       }
     }
 
-    // Clamp score between 1-100
-    const percentage = Math.max(1, Math.min(100, Math.round(score)));
+    // Clamp score between 1-99 for better heatmap distribution
+    const percentage = Math.max(1, Math.min(99, Math.round(score)));
 
     return { percentage, reasons: reasons.slice(0, 3), oppType };
   };
@@ -462,7 +461,7 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
           <div className="mt-4 flex justify-center">
             <button
               onClick={() => setDisplayedCount(prev => prev + 20)}
-              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded font-semibold transition-colors"
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold transition-colors"
             >
               Load More ({results.length - displayedCount} remaining)
             </button>

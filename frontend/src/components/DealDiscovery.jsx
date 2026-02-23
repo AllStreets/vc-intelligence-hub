@@ -1,18 +1,52 @@
 import { useState, useEffect } from 'react';
 import { TrashIcon } from '@heroicons/react/24/outline';
+import { FounderDetailsPanel } from './FounderDetailsPanel';
 
 const dealTypeCategories = ['Funding', 'Investment', 'Funding Round', 'Seed/Series A', 'Series B', 'Series C', 'IPO', 'Acquisition'];
+
+// Generate fake founder data for deals (one per deal, with score 1-99)
+const generateFakeFounders = (deals) => {
+  const founderNames = ['Alice Chen', 'Marcus Johnson', 'Sarah Williams', 'James Park', 'Elena Rodriguez', 'David Kumar', 'Lisa Zhang', 'Christopher Brown', 'Michelle Garcia', 'Ahmed Hassan'];
+
+  return deals.map((deal, index) => ({
+    ...deal,
+    founders: deal.founders || [{
+      id: `founder-${deal.id}`,
+      name: founderNames[index % founderNames.length],
+      founderScore: Math.floor(Math.random() * 99) + 1, // 1-99
+      investmentTrack: {
+        exits: Math.floor(Math.random() * 5),
+        averageROI: Math.floor(Math.random() * 300)
+      }
+    }]
+  }));
+};
 
 export default function DealDiscovery({ deals, onSearchSubmit }) {
   const [filteredDeals, setFilteredDeals] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDealTypes, setSelectedDealTypes] = useState([]);
   const [showFilter, setShowFilter] = useState(false);
-  const [deletedDealIds, setDeletedDealIds] = useState([]);
+  const [deletedDealIds, setDeletedDealIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('vc-deleted-deals');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [displayedCount, setDisplayedCount] = useState(30);
+  const [selectedFounder, setSelectedFounder] = useState(null);
 
   const deleteDeal = (dealId) => {
-    setDeletedDealIds([...deletedDealIds, dealId]);
+    const updated = [...deletedDealIds, dealId];
+    setDeletedDealIds(updated);
+    // Persist deleted deals
+    try {
+      localStorage.setItem('vc-deleted-deals', JSON.stringify(updated));
+    } catch (error) {
+      console.error('Error saving deleted deals:', error);
+    }
   };
 
   const undoDeleteDeal = (dealId) => {
@@ -25,7 +59,9 @@ export default function DealDiscovery({ deals, onSearchSubmit }) {
       return;
     }
 
-    let filtered = deals.filter(deal => !deletedDealIds.includes(deal.id));
+    // Add fake founder data to deals
+    let dealsWithFounders = generateFakeFounders(deals);
+    let filtered = dealsWithFounders.filter(deal => !deletedDealIds.includes(deal.id));
 
     // Apply search filter
     if (searchQuery) {
@@ -178,7 +214,11 @@ export default function DealDiscovery({ deals, onSearchSubmit }) {
                     {deal.funding_type}
                   </span>
                   <button
-                    onClick={() => deleteDeal(deal.id)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      deleteDeal(deal.id);
+                    }}
                     className="p-2 rounded-lg hover:bg-red-900/20 transition-colors text-slate-400 hover:text-red-400"
                     title="Remove from pipeline"
                   >
@@ -209,6 +249,24 @@ export default function DealDiscovery({ deals, onSearchSubmit }) {
                 )}
               </div>
 
+              {/* Founders section */}
+              {deal.founders && deal.founders.length > 0 && (
+                <div className="mt-2 text-xs text-gray-400">
+                  <span>{deal.founders.length === 1 ? 'Founder:' : 'Founders:'}</span>
+                  {deal.founders.map((founder, idx) => (
+                    <span key={founder.id}>
+                      {idx > 0 && ', '}
+                      <button
+                        onClick={() => setSelectedFounder(founder)}
+                        className="text-blue-400 hover:text-blue-300 hover:underline ml-1"
+                      >
+                        {founder.name}
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+
               {deal.data?.url && (
                 <a
                   href={deal.data.url}
@@ -226,13 +284,28 @@ export default function DealDiscovery({ deals, onSearchSubmit }) {
             <div className="flex justify-center pt-4">
               <button
                 onClick={() => setDisplayedCount(prev => prev + 30)}
-                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded font-semibold transition-colors"
+                className="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded font-semibold transition-colors"
               >
                 Load More ({filteredDeals.length - displayedCount} remaining)
               </button>
             </div>
           )}
         </div>
+      )}
+
+      {/* Founder Details Sidebar */}
+      <FounderDetailsPanel
+        founderId={selectedFounder?.id}
+        founderData={selectedFounder}
+        onClose={() => setSelectedFounder(null)}
+      />
+
+      {/* Click outside to close founder panel */}
+      {selectedFounder && (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setSelectedFounder(null)}
+        />
       )}
     </div>
   );
