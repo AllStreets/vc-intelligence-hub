@@ -35,10 +35,20 @@ function DraggableDealCard({ deal, stageId, onDelete }) {
       </div>
       <button
         onClick={(e) => {
+          e.preventDefault();
           e.stopPropagation();
+          console.log('[DELETE] Button clicked for deal:', deal.id);
           onDelete(stageId, deal.id);
         }}
-        className="ml-2 p-1 text-slate-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+        onPointerDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        onTouchStart={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        className="ml-2 p-1 text-slate-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto"
         title="Delete deal"
       >
         <TrashIcon className="w-4 h-4" />
@@ -181,8 +191,11 @@ const DealPipeline = memo(function DealPipeline() {
   };
 
   const handleDeleteDeal = (stageId, dealId) => {
+    console.log('[DELETE] Before:', { stageId, dealId, stageCount: pipeline[stageId]?.length });
     const updatedPipeline = { ...pipeline };
-    updatedPipeline[stageId] = updatedPipeline[stageId].filter(d => d.id !== dealId);
+    const dealsInStage = updatedPipeline[stageId] || [];
+    updatedPipeline[stageId] = dealsInStage.filter(d => d.id !== dealId);
+    console.log('[DELETE] After:', { stageId, newCount: updatedPipeline[stageId].length });
     setPipeline(updatedPipeline);
     savePipelineToStorage(updatedPipeline);
   };
