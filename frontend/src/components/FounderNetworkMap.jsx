@@ -10,6 +10,7 @@ export function FounderNetworkMap({ data }) {
   const mapContainer = useRef(null);
   const map = useRef(null);
   const [founders, setFounders] = useState([]);
+  const [connections, setConnections] = useState([]);
   const [selectedFounder, setSelectedFounder] = useState(null);
   const draggingFounderId = useRef(null);  // Use ref to avoid closure issues
   const draggedPositions = useRef({});  // Track {founderId: {lng, lat}} for dragged dots
@@ -95,17 +96,19 @@ export function FounderNetworkMap({ data }) {
       console.log('Map loaded with', positionedFounders.length, 'founders');
 
       // Extract connections from data.edges
-      const connections = data.edges?.map(edge => ({
+      const connectionsList = data.edges?.map(edge => ({
         from: edge.data?.source || edge.source,
         to: edge.data?.target || edge.target,
         strength: edge.data?.strength || 1,
         id: edge.data?.id || edge.id
       })) || [];
 
-      console.log('Processing connections:', connections.length);
+      setConnections(connectionsList);
+
+      console.log('Processing connections:', connectionsList.length);
 
       // Build connection lines GeoJSON
-      const connectionGeoJSON = buildConnectionGeoJSON(positionedFounders, connections);
+      const connectionGeoJSON = buildConnectionGeoJSON(positionedFounders, connectionsList);
       console.log('Built connections GeoJSON with', connectionGeoJSON.features.length, 'lines');
 
       // Add connections source (must be added after founders source)
@@ -140,7 +143,7 @@ export function FounderNetworkMap({ data }) {
         const connectedFounderIds = new Set();
         const connectedConnectionIds = new Set();
 
-        connections.forEach((conn, idx) => {
+        connectionsList.forEach((conn, idx) => {
           if (conn.from === founderId) {
             connectedFounderIds.add(conn.to);
             connectedConnectionIds.add(`conn-${idx}`);
@@ -200,6 +203,14 @@ export function FounderNetworkMap({ data }) {
         map.current.setPaintProperty('connection-lines', 'line-width', 2);
         map.current.setPaintProperty('connection-lines', 'line-opacity', 0.5);
       };
+
+      // Add navigation control (zoom buttons, compass)
+      map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+      // Add fullscreen control
+      map.current.addControl(new mapboxgl.FullscreenControl(), 'top-right');
+
+      console.log('Map controls added');
 
       // Add click event listener for founder dots
       map.current.on('click', 'founder-dots', (e) => {
@@ -292,7 +303,7 @@ export function FounderNetworkMap({ data }) {
         }
 
         // Update connection lines GeoJSON to reflect new positions
-        const updatedConnections = connections.map((conn, idx) => {
+        const updatedConnections = connectionsList.map((conn, idx) => {
           const founder1 = positionedFounders.find(f => f.founderId === conn.from);
           const founder2 = positionedFounders.find(f => f.founderId === conn.to);
 
@@ -367,6 +378,25 @@ export function FounderNetworkMap({ data }) {
   return (
     <div className="relative w-full h-96 bg-dark-700 rounded-lg overflow-hidden border border-dark-600">
       <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
+
+      {/* Interaction instructions overlay */}
+      <div className="absolute top-4 left-4 bg-dark-700 border border-dark-600 rounded p-3 text-xs text-slate-300 max-w-xs z-40">
+        <p className="font-semibold text-slate-200 mb-2">Founder Network Map</p>
+        <ul className="space-y-1 text-slate-400">
+          <li>• <span className="text-slate-300">Click</span> founder dots to view details</li>
+          <li>• <span className="text-slate-300">Drag</span> dots to reposition</li>
+          <li>• <span className="text-slate-300">Scroll</span> to zoom, click background to deselect</li>
+        </ul>
+      </div>
+
+      {/* Statistics display */}
+      <div className="absolute bottom-4 left-4 bg-dark-700 border border-dark-600 rounded p-3 text-xs z-40">
+        <div className="text-slate-300">
+          <p><span className="font-semibold">{founders.length}</span> founders</p>
+          <p><span className="font-semibold">{connections.length}</span> connections</p>
+        </div>
+      </div>
+
       {selectedFounder && (
         <FounderDetailsPanel
           founderData={selectedFounder}
