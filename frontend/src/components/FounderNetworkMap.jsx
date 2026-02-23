@@ -41,27 +41,26 @@ export function FounderNetworkMap({ data }) {
     if (!mapContainer.current || map.current) return;
     if (!data || !data.nodes || data.nodes.length === 0) return;
 
-    try {
-      // Position founders at cities with random offsets
-      const positionedFounders = assignFoundersToCities(data.nodes);
-      setFounders(positionedFounders);
+    // Position founders at cities with random offsets
+    const positionedFounders = assignFoundersToCities(data.nodes);
+    setFounders(positionedFounders);
 
-      // Initialize map
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: MAP_CONFIG.style,
-        center: MAP_CONFIG.center,
-        zoom: MAP_CONFIG.zoom,
-        pitch: MAP_CONFIG.pitch || 0,
-        bearing: MAP_CONFIG.bearing || 0
-      });
+    // Initialize map
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: MAP_CONFIG.style,
+      center: MAP_CONFIG.center,
+      zoom: MAP_CONFIG.zoom,
+      pitch: MAP_CONFIG.pitch || 0,
+      bearing: MAP_CONFIG.bearing || 0
+    });
 
-      map.current.on('error', (e) => {
-        console.error('Mapbox error:', e);
-        setError(`Map error: ${e.error?.message || 'Unknown error'}`);
-      });
+    map.current.on('error', (e) => {
+      console.error('Mapbox error:', e);
+      setError(`Map error: ${e.error?.message || 'Unknown error'}`);
+    });
 
-      map.current.on('load', () => {
+    map.current.on('load', () => {
       // Add founder positions as GeoJSON source
       const founderGeoJSON = buildFounderGeoJSON(positionedFounders);
 
@@ -355,10 +354,7 @@ export function FounderNetworkMap({ data }) {
           draggingFounderId.current = null;
         }
       });
-    } catch (err) {
-      console.error('Error initializing map:', err);
-      setError(`Failed to initialize map: ${err.message}`);
-    }
+    });
 
     return () => {
       // Reset all dragged positions when leaving this component
