@@ -150,16 +150,16 @@ const DealPipeline = memo(function DealPipeline() {
 
   const isHighQualityDeal = (deal) => {
     // Filter out low-quality news-based "deals"
-    // Real deals should have meaningful company names and funding types
+    // Real deals should have meaningful company names
     const companyName = deal.company_name || '';
 
     // Reject single-word company names or generic titles (likely extracted from news headlines)
     if (companyName.length < 3) return false;
     if (/^(The|What|Can|Where|How|Why|When|Who|Which|Why|This|That|It|Is|Are|Be|Will|Would|Could|Should|Has|Have|Does|Did|Do|Being)$/i.test(companyName)) return false;
 
-    // Reject generic funding types (should be specific like "Series A", not just "Funding")
+    // Accept deals with any funding type (we'll enrich with fake founders anyway)
     const fundingType = deal.funding_type || '';
-    if (fundingType === 'Funding' || fundingType === 'Investment' || fundingType === '') return false;
+    if (fundingType === '') return false;
 
     return true;
   };
