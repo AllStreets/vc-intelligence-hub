@@ -4,6 +4,10 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { MAPBOX_TOKEN, MAP_CONFIG, US_CITIES, assignFoundersToCities, buildFounderGeoJSON, buildConnectionGeoJSON } from '../utils/mapboxConfig';
 import { FounderDetailsPanel } from './FounderDetailsPanel';
 
+if (!MAPBOX_TOKEN) {
+  console.error('ERROR: VITE_MAPBOX_TOKEN is not set in environment variables');
+}
+
 mapboxgl.accessToken = MAPBOX_TOKEN;
 
 export function FounderNetworkMap({ data }) {
@@ -12,6 +16,7 @@ export function FounderNetworkMap({ data }) {
   const [founders, setFounders] = useState([]);
   const [connections, setConnections] = useState([]);
   const [selectedFounder, setSelectedFounder] = useState(null);
+  const [error, setError] = useState(null);
   const draggingFounderId = useRef(null);  // Use ref to avoid closure issues
   const draggedPositions = useRef({});  // Track {founderId: {lng, lat}} for dragged dots
 
@@ -36,21 +41,27 @@ export function FounderNetworkMap({ data }) {
     if (!mapContainer.current || map.current) return;
     if (!data || !data.nodes || data.nodes.length === 0) return;
 
-    // Position founders at cities with random offsets
-    const positionedFounders = assignFoundersToCities(data.nodes);
-    setFounders(positionedFounders);
+    try {
+      // Position founders at cities with random offsets
+      const positionedFounders = assignFoundersToCities(data.nodes);
+      setFounders(positionedFounders);
 
-    // Initialize map
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: MAP_CONFIG.style,
-      center: MAP_CONFIG.center,
-      zoom: MAP_CONFIG.zoom,
-      pitch: MAP_CONFIG.pitch || 0,
-      bearing: MAP_CONFIG.bearing || 0
-    });
+      // Initialize map
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: MAP_CONFIG.style,
+        center: MAP_CONFIG.center,
+        zoom: MAP_CONFIG.zoom,
+        pitch: MAP_CONFIG.pitch || 0,
+        bearing: MAP_CONFIG.bearing || 0
+      });
 
-    map.current.on('load', () => {
+      map.current.on('error', (e) => {
+        console.error('Mapbox error:', e);
+        setError(`Map error: ${e.error?.message || 'Unknown error'}`);
+      });
+
+      map.current.on('load', () => {
       // Add founder positions as GeoJSON source
       const founderGeoJSON = buildFounderGeoJSON(positionedFounders);
 
@@ -344,7 +355,10 @@ export function FounderNetworkMap({ data }) {
           draggingFounderId.current = null;
         }
       });
-    });
+    } catch (err) {
+      console.error('Error initializing map:', err);
+      setError(`Failed to initialize map: ${err.message}`);
+    }
 
     return () => {
       // Reset all dragged positions when leaving this component
@@ -359,6 +373,8 @@ export function FounderNetworkMap({ data }) {
         map.current.off('click');
         map.current.off('mouseenter', 'founder-dots');
         map.current.off('mouseleave', 'founder-dots');
+        map.current.off('error');
+        map.current.off('load');
 
         map.current.remove();
         map.current = null;
@@ -367,6 +383,29 @@ export function FounderNetworkMap({ data }) {
   }, [data]);
 
   // Empty state
+  if (!MAPBOX_TOKEN) {
+    return (
+      <div className="w-full h-96 bg-red-900/20 rounded-lg flex items-center justify-center border border-red-700/50 p-4">
+        <div className="text-center">
+          <p className="text-red-400 font-semibold mb-2">Mapbox Configuration Error</p>
+          <p className="text-red-300 text-sm">VITE_MAPBOX_TOKEN environment variable is not set</p>
+          <p className="text-red-300 text-xs mt-1">On Vercel: Add VITE_MAPBOX_TOKEN to Environment Variables in project settings</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="w-full h-96 bg-red-900/20 rounded-lg flex items-center justify-center border border-red-700/50 p-4">
+        <div className="text-center">
+          <p className="text-red-400 font-semibold mb-2">Map Loading Error</p>
+          <p className="text-red-300 text-sm">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!data || !data.nodes || data.nodes.length === 0) {
     return (
       <div className="w-full h-96 bg-dark-700 rounded-lg flex items-center justify-center text-slate-400">
