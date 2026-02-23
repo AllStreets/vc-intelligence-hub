@@ -42,7 +42,7 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
   const [thesis, setThesis] = useState({
     sectors: [],
     stages: [],
-    minMomentum: 50,
+    minMomentum: 0,
     minExits: 0,
     minROI: 0
   });
@@ -173,14 +173,14 @@ const ThesisMatcher = memo(function ThesisMatcher({ trends, deals }) {
 
     if (thesis.minMomentum > 0 && oppType === OpportunityType.TREND) {
       if (hasMomentumInfo(item)) {
-        totalCriteria++;
-        const momentum = Math.min(100, item.momentum_score * 2);
+        // Treat momentum as a bonus criterion - only adds if it matches
+        const momentum = item.momentum_score || 0;
         if (momentum >= thesis.minMomentum) {
+          totalCriteria++;
           matches++;
           reasons.push(`✓ Momentum: ${momentum.toFixed(0)}`);
-        } else {
-          reasons.push(`✗ Momentum: ${momentum.toFixed(0)}`);
         }
+        // If momentum doesn't match, don't penalize - just don't add it as a criterion
       }
     }
 
