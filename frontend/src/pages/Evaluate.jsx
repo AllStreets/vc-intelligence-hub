@@ -2,16 +2,7 @@ import { useState, useEffect } from 'react';
 import { FounderNetworkMap } from '../components/FounderNetworkMap';
 import { SectorHeatmap } from '../components/SectorHeatmap';
 import { fetchTrendsWithCache, fetchDealsWithCache, getApiBaseUrl } from '../services/dataCache';
-
-// Cities for founder generation (same as DealPipeline)
-const US_CITIES = [
-  { name: 'Chicago', state: 'IL' },
-  { name: 'San Francisco', state: 'CA' },
-  { name: 'Cary', state: 'NC' },
-  { name: 'Seattle', state: 'WA' },
-  { name: 'New York', state: 'NY' },
-  { name: 'Miami', state: 'FL' }
-];
+import { GLOBAL_CITIES } from '../utils/globalCities';
 
 // Founder titles - varied and realistic
 const FOUNDER_TITLES = ['CEO', 'CTO', 'CFO', 'Founder', 'Chairman', 'President', 'VP Engineering', 'VP Product', 'VC Manager', 'Partner'];
@@ -44,14 +35,14 @@ const generateFakeFounders = (dealId) => {
   for (let i = 0; i < founderCount; i++) {
     const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
     const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
-    const city = US_CITIES[Math.floor(Math.random() * US_CITIES.length)];
+    const city = GLOBAL_CITIES[Math.floor(Math.random() * GLOBAL_CITIES.length)];
     const title = FOUNDER_TITLES[Math.floor(Math.random() * FOUNDER_TITLES.length)];
 
     founders.push({
       id: `founder-${dealId}-${i}`,
       name: `${firstName} ${lastName}`,
       title: title,
-      city: `${city.name}, ${city.state}`,
+      city: `${city.name}, ${city.country}`,
       founderScore: Math.floor(Math.random() * 100) + 1, // 1-100
       investmentTrack: {
         exits: Math.floor(Math.random() * 8), // 0-7 exits
