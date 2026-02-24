@@ -1,9 +1,12 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useState, useEffect, memo } from 'react';
 
-// Generate color for index position
-// Colors 0-7 use predefined palette
-// Colors 8+ generate dynamically using HSL spectrum spread
+/**
+ * Generate a color for a trend at a given index
+ * @param {number} index - Zero-based index of the trend
+ * @param {number} [totalCount=index+1] - Total number of trends (used for spectrum distribution)
+ * @returns {string} Hex color for indices 0-7, HSL color for 8+
+ */
 const generateColor = (index, totalCount = index + 1) => {
   const baseColors = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
 
@@ -11,9 +14,11 @@ const generateColor = (index, totalCount = index + 1) => {
     return baseColors[index];
   }
 
-  // For colors beyond 8, use HSL color space
-  // Distribute across full color spectrum (0-360 degrees)
-  const hue = (index / totalCount) * 360;
+  // For colors beyond 8, distribute remaining across full spectrum
+  // Adjust for the 8 base colors already used
+  const adjustedIndex = index - baseColors.length;
+  const remainingColors = Math.max(totalCount - baseColors.length, 1);
+  const hue = (adjustedIndex / remainingColors) * 360;
   const saturation = 75;
   const lightness = 50;
 
