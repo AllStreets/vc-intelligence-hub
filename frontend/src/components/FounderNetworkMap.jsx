@@ -414,16 +414,6 @@ export function FounderNetworkMap({ data }) {
     <div className="relative w-full h-96 bg-dark-700 rounded-lg overflow-hidden border border-dark-600">
       <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
 
-      {/* Interaction instructions overlay */}
-      <div className="absolute top-4 left-4 bg-dark-700 border border-dark-600 rounded p-3 text-xs text-slate-300 max-w-xs z-40">
-        <p className="font-semibold text-slate-200 mb-2">Founder Network Map</p>
-        <ul className="space-y-1 text-slate-400">
-          <li>• <span className="text-slate-300">Click</span> founder dots to view details</li>
-          <li>• <span className="text-slate-300">Drag</span> dots to reposition</li>
-          <li>• <span className="text-slate-300">Scroll</span> to zoom, click background to deselect</li>
-        </ul>
-      </div>
-
       {/* Statistics display */}
       <div className="absolute bottom-4 left-4 bg-dark-700 border border-dark-600 rounded p-3 text-xs z-40">
         <div className="text-slate-300">
