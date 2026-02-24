@@ -72,11 +72,15 @@ const TrendHistoryChart = memo(function TrendHistoryChart({ trends = [], dateRan
   };
 
   const toggleTrendSelection = (trendId) => {
-    setSelectedTrends(prev =>
-      prev.includes(trendId)
-        ? prev.filter(t => t !== trendId)
-        : [...prev, trendId]
-    );
+    setSelectedTrends(prev => {
+      if (prev.includes(trendId)) {
+        // Trend already selected - remove it (deselect)
+        return prev.filter(t => t !== trendId);
+      } else {
+        // Trend not selected - append to end (maintain order by click sequence)
+        return [...prev, trendId];
+      }
+    });
   };
 
   if (loading) {
