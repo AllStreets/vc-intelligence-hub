@@ -1,23 +1,17 @@
+import { GLOBAL_CITIES } from './globalCities';
+
 export const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
 export const MAP_CONFIG = {
   style: 'mapbox://styles/mapbox/dark-v11',
-  center: [-95.7129, 37.0902], // Center of USA
-  zoom: 3.5,
+  center: [-20, 20], // Centered on world (roughly Europe/Africa/Americas)
+  zoom: 2.5, // Zoom out to see all continents
   pitch: 0,
   bearing: 0,
   container: 'map-container'
 };
 
-// City coordinates for founder clustering
-export const US_CITIES = {
-  'Chicago, IL': { lat: 41.8781, lng: -87.6298 },
-  'San Francisco, CA': { lat: 37.7749, lng: -122.4194 },
-  'Cary, NC': { lat: 35.7915, lng: -78.7811 },
-  'Seattle, WA': { lat: 47.6062, lng: -122.3321 },
-  'New York, NY': { lat: 40.7128, lng: -74.0060 },
-  'Miami, FL': { lat: 25.7617, lng: -80.1918 }
-};
+export { GLOBAL_CITIES };
 
 /**
  * Assign founders to cities with random offsets
@@ -25,16 +19,14 @@ export const US_CITIES = {
  * Output: positioned founders array with all required properties
  */
 export function assignFoundersToCities(nodes) {
-  const cityNames = Object.keys(US_CITIES);
-
   return nodes.map((node, index) => {
     // Handle spec data structure: {data: {id, label}}
     const founderId = node.data?.id || node.id;
     const name = node.data?.label || node.name || 'Unknown';
 
-    // Round-robin distribution across 6 cities
-    const city = cityNames[index % cityNames.length];
-    const cityCoords = US_CITIES[city];
+    // Round-robin distribution across all global cities
+    const cityObj = GLOBAL_CITIES[index % GLOBAL_CITIES.length];
+    const cityName = `${cityObj.name}, ${cityObj.country}`;
 
     // Random offset (±0.015 degrees ≈ ±1.7km)
     const offsetLat = (Math.random() - 0.5) * 0.03;
@@ -43,11 +35,11 @@ export function assignFoundersToCities(nodes) {
     return {
       founderId: founderId,
       name: name,
-      city: city,
-      lat: cityCoords.lat + offsetLat,
-      lng: cityCoords.lng + offsetLng,
-      cityLat: cityCoords.lat,
-      cityLng: cityCoords.lng
+      city: cityName,
+      lat: cityObj.lat + offsetLat,
+      lng: cityObj.lng + offsetLng,
+      cityLat: cityObj.lat,
+      cityLng: cityObj.lng
     };
   });
 }
