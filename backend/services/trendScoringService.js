@@ -3,22 +3,38 @@ import { logger } from '../utils/logger.js';
 export class TrendScoringService {
   /**
    * Score trends with momentum calculation
-   * Scoring breakdown:
-   * - Mention velocity (0-30 pts): How fast mentions growing
+   * Scoring breakdown (NO BASELINES - can start at 0):
+   * - Mention velocity (0-20 pts): How fast mentions growing
    * - Source diversity (0-20 pts): Number of different sources
    * - Funding signals (0-25 pts): Associated funding
    * - Founder prominence (0-15 pts): Known founders involved
-   * - Recency (0-10 pts): Recent mentions weighted higher
+   * - Recency (0-20 pts): Recent mentions weighted higher
+   * Total range: 0-100 pts (will be percentile-mapped)
    */
   scoreTrends(trendsList) {
     logger.info('TrendScoringService: Scoring trends', { count: trendsList.length });
 
-    const scoredTrends = trendsList.map(trend => {
-      const score = this.calculateMomentumScore(trend);
+    // Step 1: Calculate raw scores for all trends
+    const withRawScores = trendsList.map(trend => ({
+      ...trend,
+      rawScore: this.calculateMomentumScore(trend)
+    }));
+
+    // Step 2: Calculate percentiles
+    const sortedScores = withRawScores.map(t => t.rawScore).sort((a, b) => a - b);
+
+    const scoredTrends = withRawScores.map(trend => {
+      // Find percentile position (0-100)
+      const rank = sortedScores.indexOf(trend.rawScore);
+      const percentile = (rank / (sortedScores.length - 1)) * 100 || 50;
+
+      // Map percentile to 1-99 range using bell curve
+      const finalScore = this.mapPercentileToScore(percentile);
+
       return {
         ...trend,
-        momentum_score: score,
-        lifecycle: this.getTrendLifecycle(score),
+        momentum_score: finalScore,
+        lifecycle: this.getTrendLifecycle(finalScore),
         confidence: this.calculateConfidence(trend)
       };
     });
@@ -28,45 +44,81 @@ export class TrendScoringService {
 
     logger.info('TrendScoringService: Scoring complete', {
       topTrend: scoredTrends[0]?.name,
-      topScore: scoredTrends[0]?.momentum_score
+      topScore: scoredTrends[0]?.momentum_score,
+      bottomScore: scoredTrends[scoredTrends.length - 1]?.momentum_score
     });
 
     return scoredTrends;
   }
 
+  mapPercentileToScore(percentile) {
+    // percentile: 0-100
+    // Convert to probability: 0-1
+    const probability = percentile / 100;
+
+    // Get z-score from normal distribution
+    const zScore = this.inverseNormalCDF(probability);
+
+    // Map z-score (-3 to +3) to 1-99 range
+    // Center at 50, scale so ±3σ covers ±49 (full range)
+    const score = 50 + (zScore * 16.5);
+
+    return Math.max(1, Math.min(99, Math.round(score)));
+  }
+
+  inverseNormalCDF(p) {
+    // Handle extreme values
+    if (p < 0.0000285) return -3.7;
+    if (p > 0.9999715) return 3.7;
+
+    // Wichura algorithm for approximating inverse normal CDF
+    if (p < 0.02425) {
+      const t = Math.sqrt(-2 * Math.log(p));
+      return -(((2.328819 * t + 2.512396) * t + 1.000000) / (t + 0.308995));
+    } else if (p < 0.97575) {
+      const t = p - 0.5;
+      return (((2.26159 * t + 37.20671) * t + 2.65770) * t + 0.360175) / (((2.04288 * t + 22.47202) * t + 0.240708));
+    } else {
+      const t = Math.sqrt(-2 * Math.log(1 - p));
+      return (((2.328819 * t + 2.512396) * t + 1.000000) / (t + 0.308995));
+    }
+  }
+
   calculateMomentumScore(trend) {
     let score = 0;
 
-    // Mention velocity (0-30 pts) - with boost for low mention counts
-    // Single mention = 15 pts baseline (to ensure decent distribution)
-    const velocityScore = Math.min(15 + (trend.mention_count || 1) * 3, 30);
+    // Velocity: 0-20 pts (linear scaling with mention count, NO BASELINE)
+    // 1 mention = 0 pts, 10 mentions = 20 pts
+    const velocityScore = Math.min((trend.mention_count || 1) * 2, 20);
     score += velocityScore;
 
-    // Source diversity (0-25 pts) - reward if mentioned in multiple sources
-    // Single source = 10 pts baseline, then +5 per additional source
-    const sourceDiversity = Math.min(10 + (trend.sources ? trend.sources.length * 5 : 0), 25);
+    // Source diversity: 0-20 pts (NO BASELINE)
+    // 1 source = 0 pts, 6+ sources = 20 pts
+    const sourceCount = (trend.sources ? trend.sources.length : 1);
+    const sourceDiversity = Math.min(Math.max(sourceCount - 1, 0) * 4, 20);
     score += sourceDiversity;
 
-    // Funding signals (0-25 pts) - check for Series A/B/C mentions
+    // Funding signals: 0-25 pts (unchanged from original, no baseline)
     const fundingScore = this.calculateFundingScore(trend);
     score += fundingScore;
 
-    // Founder prominence (0-15 pts) - serial entrepreneurs
+    // Founder prominence: 0-15 pts (unchanged from original, no baseline)
     const founderScore = this.calculateFounderScore(trend);
     score += founderScore;
 
-    // Recency (0-10 pts)
+    // Recency: 0-20 pts (changed from 0-10 to give more weight)
     const recencyScore = this.calculateRecencyScore(trend);
     score += recencyScore;
 
-    return Math.min(Math.round(score), 100);
+    // Return raw score (100 max) - will be percentile-mapped later
+    return Math.min(score, 100);
   }
 
   calculateFundingScore(trend) {
     if (!trend.data || typeof trend.data !== 'object') return 0;
 
     const text = JSON.stringify(trend.data).toLowerCase();
-    let score = 5; // Base score for any trend (vs 0 before)
+    let score = 0; // No baseline - starts at 0
 
     if (text.includes('series a') || text.includes('seed')) score += 8;
     if (text.includes('series b')) score += 12;
@@ -102,15 +154,14 @@ export class TrendScoringService {
       age = (now - trendDate) / (1000 * 60 * 60); // hours
     }
 
-    // Recent trends (< 24 hours) get full score
-    if (age < 24) return 10;
-    // Decay by 0.5 points per day
-    return Math.max(10 - (age / 24) * 0.5, 2);
+    // Linear decay: < 24 hours = 20 pts, decay by 0.5 per day
+    const score = 20 - (age / 24) * 0.5;
+    return Math.max(score, 0); // Can now go to 0
   }
 
   getTrendLifecycle(score) {
-    if (score >= 70) return 'peak';
-    if (score >= 50) return 'emerging';
+    if (score >= 80) return 'peak';
+    if (score >= 60) return 'emerging';
     if (score >= 40) return 'established';
     return 'declining';
   }

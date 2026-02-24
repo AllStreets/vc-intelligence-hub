@@ -108,7 +108,7 @@ function transformTrendForFrontend(trend) {
     name: trend.name,
     category: trend.category,
     momentum_score: trend.momentum_score,
-    score: Math.min(100, trend.momentum_score * 2), // Scale 0-50 to 0-100
+    score: Math.round((trend.momentum_score / 99) * 100), // Map 1-99 to 1-100
     momentum: trend.momentum_score,
     momentumChange: momentumChange,
     lifecycle: trend.lifecycle,
