@@ -28,6 +28,7 @@ const generateColor = (index, totalCount = index + 1) => {
 const TrendHistoryChart = memo(function TrendHistoryChart({ trends = [], dateRange = 30 }) {
   const [data, setData] = useState([]);
   const [selectedTrends, setSelectedTrends] = useState([]); // ordered array maintaining click sequence
+  const [colorPalette, setColorPalette] = useState([]); // computed colors for selected trends in order
   const [displayTrends, setDisplayTrends] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -46,6 +47,14 @@ const TrendHistoryChart = memo(function TrendHistoryChart({ trends = [], dateRan
       setLoading(false);
     }
   }, [trends, dateRange]);
+
+  useEffect(() => {
+    // Recompute palette whenever selected trends change
+    const palette = selectedTrends.map((_, index) =>
+      generateColor(index, selectedTrends.length)
+    );
+    setColorPalette(palette);
+  }, [selectedTrends]);
 
   const generateMockHistoricalData = (trendsToInclude, days = 30) => {
     const data = [];
