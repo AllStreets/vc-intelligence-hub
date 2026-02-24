@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { MAPBOX_TOKEN, MAP_CONFIG, US_CITIES, assignFoundersToCities, buildFounderGeoJSON, buildConnectionGeoJSON } from '../utils/mapboxConfig';
+import { MAPBOX_TOKEN, MAP_CONFIG, assignFoundersToCities, buildFounderGeoJSON, buildConnectionGeoJSON } from '../utils/mapboxConfig';
 import { FounderDetailsPanel } from './FounderDetailsPanel';
 
 if (!MAPBOX_TOKEN) {
