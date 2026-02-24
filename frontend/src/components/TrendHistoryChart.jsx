@@ -129,20 +129,32 @@ const TrendHistoryChart = memo(function TrendHistoryChart({ trends = [], dateRan
             labelStyle={{ color: '#FFF' }}
           />
           <Legend />
-          {displayTrends.map((trend, idx) =>
-            selectedTrends.includes(trend.id) ? (
+          {displayTrends.map((trend, idx) => {
+            // Check if this trend is selected
+            const selectedIndex = selectedTrends.indexOf(trend.id);
+
+            // Only render line if trend is selected
+            if (selectedIndex === -1) {
+              return null;
+            }
+
+            // Get color from palette based on selection order, not display order
+            const colorIndex = selectedIndex;
+            const lineColor = colorPalette[colorIndex] || generateColor(colorIndex, selectedTrends.length);
+
+            return (
               <Line
                 key={trend.id}
                 type="monotone"
                 dataKey={trend.id}
-                stroke={generateColor(idx, displayTrends.length)}
+                stroke={lineColor}
                 dot={false}
                 strokeWidth={2}
                 isAnimationActive={false}
                 name={trend.name}
               />
-            ) : null
-          )}
+            );
+          })}
         </LineChart>
       </ResponsiveContainer>
 
