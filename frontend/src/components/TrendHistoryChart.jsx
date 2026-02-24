@@ -27,7 +27,7 @@ const generateColor = (index, totalCount = index + 1) => {
 
 const TrendHistoryChart = memo(function TrendHistoryChart({ trends = [], dateRange = 30 }) {
   const [data, setData] = useState([]);
-  const [selectedTrends, setSelectedTrends] = useState([]);
+  const [selectedTrends, setSelectedTrends] = useState([]); // ordered array maintaining click sequence for color assignment
   const [displayTrends, setDisplayTrends] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,7 +37,7 @@ const TrendHistoryChart = memo(function TrendHistoryChart({ trends = [], dateRan
       const topTrends = trends.slice(0, 15);
       setDisplayTrends(topTrends);
 
-      // Auto-select first 3 trends
+      // Auto-select first 3 trends as ordered array (click order determines color assignment)
       setSelectedTrends(topTrends.slice(0, 3).map(t => t.id));
 
       // Generate mock historical data with actual trend names
