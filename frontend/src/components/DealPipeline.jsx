@@ -3,22 +3,13 @@ import { DndContext, useDraggable, PointerSensor, useSensor, useSensors } from '
 import { DroppableArea } from './DroppableArea';
 import { XMarkIcon, PlusIcon, TrashIcon, UserIcon, MapPinIcon, CheckCircleIcon, ArrowTrendingUpIcon } from '@heroicons/react/24/outline';
 import { fetchDealsWithCache, getApiBaseUrl } from '../services/dataCache';
+import { GLOBAL_CITIES } from '../utils/globalCities';
 
 const pipelineStages = [
   { id: 'prospecting', label: 'Prospecting', color: 'amber' },
   { id: 'evaluating', label: 'Evaluating', color: 'blue' },
   { id: 'due_diligence', label: 'Due Diligence', color: 'purple' },
   { id: 'ready_to_invest', label: 'Ready to Invest', color: 'green' }
-];
-
-// Cities for founder generation
-const US_CITIES = [
-  { name: 'Chicago', state: 'IL' },
-  { name: 'San Francisco', state: 'CA' },
-  { name: 'Cary', state: 'NC' },
-  { name: 'Seattle', state: 'WA' },
-  { name: 'New York', state: 'NY' },
-  { name: 'Miami', state: 'FL' }
 ];
 
 // Founder titles - varied and realistic
@@ -52,14 +43,14 @@ const generateFakeFounders = (dealId) => {
   for (let i = 0; i < founderCount; i++) {
     const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
     const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
-    const city = US_CITIES[Math.floor(Math.random() * US_CITIES.length)];
+    const city = GLOBAL_CITIES[Math.floor(Math.random() * GLOBAL_CITIES.length)];
     const title = FOUNDER_TITLES[Math.floor(Math.random() * FOUNDER_TITLES.length)];
 
     founders.push({
       id: `founder-${dealId}-${i}`,
       name: `${firstName} ${lastName}`,
       title: title,
-      city: `${city.name}, ${city.state}`,
+      city: `${city.name}, ${city.country}`,
       founderScore: Math.floor(Math.random() * 100) + 1, // 1-100
       investmentTrack: {
         exits: Math.floor(Math.random() * 8), // 0-7 exits
