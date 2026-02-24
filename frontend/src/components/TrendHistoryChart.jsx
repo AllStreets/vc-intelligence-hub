@@ -1,13 +1,30 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useState, useEffect, memo } from 'react';
 
+// Generate color for index position
+// Colors 0-7 use predefined palette
+// Colors 8+ generate dynamically using HSL spectrum spread
+const generateColor = (index, totalCount = index + 1) => {
+  const baseColors = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
+
+  if (index < baseColors.length) {
+    return baseColors[index];
+  }
+
+  // For colors beyond 8, use HSL color space
+  // Distribute across full color spectrum (0-360 degrees)
+  const hue = (index / totalCount) * 360;
+  const saturation = 75;
+  const lightness = 50;
+
+  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+};
+
 const TrendHistoryChart = memo(function TrendHistoryChart({ trends = [], dateRange = 30 }) {
   const [data, setData] = useState([]);
   const [selectedTrends, setSelectedTrends] = useState([]);
   const [displayTrends, setDisplayTrends] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const colors = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
 
   useEffect(() => {
     if (trends.length > 0) {
@@ -100,7 +117,7 @@ const TrendHistoryChart = memo(function TrendHistoryChart({ trends = [], dateRan
                 key={trend.id}
                 type="monotone"
                 dataKey={trend.id}
-                stroke={colors[idx % colors.length]}
+                stroke={generateColor(idx, displayTrends.length)}
                 dot={false}
                 strokeWidth={2}
                 isAnimationActive={false}
